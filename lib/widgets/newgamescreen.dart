@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:rook_flutter/models/player.dart';
-import 'package:rook_flutter/models/newgame.dart';
+import 'package:rook_flutter/models/game.dart';
 
 List<Player> players = [Player('Martin'),Player('Brad')];
 
@@ -10,25 +9,25 @@ class PartnerSelection extends NewGameExpandableItem {
 
   final List<Player> players;
 
-  PartnerSelection(NewGame newGame,this.players,{bool isExpanded=false}) : super(newGame,isExpanded);
+  PartnerSelection(NewMatch newMatch,this.players,{bool isExpanded=false}) : super(newMatch,isExpanded);
 
   @override
   ExpansionPanel create (State expandedState,List<NewGameExpandableItem> items){
     return ExpansionPanel(
       headerBuilder: (BuildContext context, bool isExpanded) {
 //        return ListTile(
-//          title: Text(newGame.partners.length>0?newGame.partners.map((player)=>player.name).join(','):'No Partners'),
+//          title: Text(newMatch.partners.length>0?newMatch.partners.map((player)=>player.name).join(','):'No Partners'),
 //        );
 
-        if(newGame.partners.length==0){
+        if(newMatch.partners.length==0){
           return Text('No Partners');
         }else{
           return Row(
-                children: newGame.partners.map<RaisedButton>((Player player) {
-                  return RaisedButton(
+                children: newMatch.partners.map<FlatButton>((Player player) {
+                  return FlatButton(
                     onPressed: () {
                       expandedState.setState(() {
-                        newGame.partners.remove(player);
+                        newMatch.partners.remove(player);
                       });
                     },
                     child: Text(
@@ -40,19 +39,19 @@ class PartnerSelection extends NewGameExpandableItem {
             );
         }
 
-        return Text(newGame.partners.length>0?newGame.partners.map((player)=>player.name).join(','):'No Partners');
+        return Text(newMatch.partners.length>0?newMatch.partners.map((player)=>player.name).join(','):'No Partners');
 //      return Dismissible(
 //        key: Key('player'),
 //        onDismissed: (direction){
 //          expandedState.setState(() {
-//              newGame.partners.clear();
+//              newMatch.partners.clear();
 //          });
 //          Text('No Partners');
 ////          Scaffold
 ////              .of(context)
 ////              .showSnackBar(SnackBar(content: Text("dismissed")));
 //        },
-//        child: Text(newGame.partners.length>0?newGame.partners.map((player)=>player.name).join(','):'No Partners'),
+//        child: Text(newMatch.partners.length>0?newMatch.partners.map((player)=>player.name).join(','):'No Partners'),
 //      );
       },
       body: Container(
@@ -61,7 +60,7 @@ class PartnerSelection extends NewGameExpandableItem {
               return RaisedButton(
                 onPressed: () {
                   expandedState.setState(() {
-                    newGame.partners.add(player);
+                    newMatch.partners.add(player);
                   });
                 },
                 child: Text(
@@ -83,14 +82,14 @@ class CallerSelection extends NewGameExpandableItem {
 
   final List<Player> players;
 
-  CallerSelection(NewGame newGame,this.players,{bool isExpanded=false}) : super(newGame,isExpanded);
+  CallerSelection(NewMatch newMatch,this.players,{bool isExpanded=false}) : super(newMatch,isExpanded);
 
   @override
   ExpansionPanel create (State expandedState,List<NewGameExpandableItem> items){
     return ExpansionPanel(
       headerBuilder: (BuildContext context, bool isExpanded) {
         return ListTile(
-          title: Text(newGame.bidder!=null?"Bidder: "+newGame.bidder.name:'Select Caller'),
+          title: Text(newMatch.bidder!=null?"Bidder: "+newMatch.bidder.name:'Select Caller'),
         );
       },
       body: Container(
@@ -99,9 +98,9 @@ class CallerSelection extends NewGameExpandableItem {
               return RaisedButton(
                 onPressed: () {
                   expandedState.setState(() {
-                    newGame.bidder == player
-                        ? newGame.bidder = null
-                        : newGame.bidder = player;
+                    newMatch.bidder == player
+                        ? newMatch.bidder = null
+                        : newMatch.bidder = player;
                     isExpanded=false;//we made a selection unexpand section
                   });
                 },
@@ -120,17 +119,17 @@ class CallerSelection extends NewGameExpandableItem {
 
 class SliderItem extends NewGameExpandableItem {
 
-  SliderItem(NewGame newGame,{bool isExpanded=false}) : super(newGame,isExpanded);
+  SliderItem(NewMatch newMatch,{bool isExpanded=false}) : super(newMatch,isExpanded);
 
   @override
   ExpansionPanel create (State expandState,List<NewGameExpandableItem> items){
     return ExpansionPanel(
       headerBuilder: (BuildContext context, bool isExpanded) {
         return ListTile(
-          title: Text("Current Bid: "+newGame.bid.toString()),
+          title: Text("Current Bid: "+newMatch.bid.toString()),
         );
       },
-      body: SliderWidget(newGame,expandState),
+      body: SliderWidget(newMatch,expandState),
       isExpanded: isExpanded,
     );
   }
@@ -139,36 +138,36 @@ class SliderItem extends NewGameExpandableItem {
 
 class SliderWidget extends StatefulWidget {
 
-  final NewGame newGame;
+  final NewMatch newMatch;
   final State expandState;
 
-  SliderWidget(this.newGame,this.expandState);
+  SliderWidget(this.newMatch,this.expandState);
 
   @override
-  SliderState createState() => SliderState(newGame,expandState);
+  SliderState createState() => SliderState(newMatch,expandState);
 }
 
 class SliderState extends State<SliderWidget> {
-  NewGame newGame;
+  NewMatch newMatch;
   State expandState;
 
-  SliderState(this.newGame,this.expandState);
+  SliderState(this.newMatch,this.expandState);
 
   @override
   Widget build(BuildContext context) {
     return Container(
       child: Slider(
-        value: newGame.bid,
+        value: newMatch.bid,
         min: 100,
         max: 180,
         divisions: 16,
         label: 'Bid',
         onChanged: (newrating){
           setState(() {
-            newGame.bid=newrating;
+            newMatch.bid=newrating;
           });
           expandState.setState(() {
-            newGame.bid=newrating;
+            newMatch.bid=newrating;
           });
         },
       ),
@@ -179,7 +178,7 @@ class SliderState extends State<SliderWidget> {
 // For testing
 class BasicItem extends NewGameExpandableItem {
 
-  BasicItem(NewGame newGame,{bool isExpanded=false}) : super(newGame,isExpanded);
+  BasicItem(NewMatch newMatch,{bool isExpanded=false}) : super(newMatch,isExpanded);
 
   @override
   ExpansionPanel create (State state,List<NewGameExpandableItem> items){
@@ -209,11 +208,11 @@ class BasicItem extends NewGameExpandableItem {
 // stores ExpansionPanel state information
 abstract class NewGameExpandableItem {
 
-  final NewGame newGame;
+  final NewMatch newMatch;
   bool isExpanded = false;
 
   NewGameExpandableItem(
-      this.newGame,
+      this.newMatch,
       this.isExpanded,
       );
 
@@ -224,26 +223,26 @@ abstract class NewGameExpandableItem {
 
 class ExpansionStateWidget extends StatefulWidget {
 
-  final NewGame newGame;
-  ExpansionStateWidget(this.newGame,{Key key}) : super(key: key);
+  final NewMatch newMatch;
+  ExpansionStateWidget(this.newMatch,{Key key}) : super(key: key);
 
   @override
-  ExpansionControls createState() => ExpansionControls(newGame);
+  ExpansionControls createState() => ExpansionControls(newMatch);
 }
 
 class ExpansionControls extends State<ExpansionStateWidget> {
 
-  NewGame newGame;
+  NewMatch newMatch;
   List<NewGameExpandableItem> newItems;
 
 
-  ExpansionControls(NewGame newGame){
-    this.newGame=newGame;
+  ExpansionControls(NewMatch newMatch){
+    this.newMatch=newMatch;
     newItems = [
-      CallerSelection(newGame,players),
-      SliderItem(newGame),
-      PartnerSelection(newGame,players),
-      BasicItem(newGame)
+      CallerSelection(newMatch,players),
+      SliderItem(newMatch),
+      PartnerSelection(newMatch,players),
+      BasicItem(newMatch)
     ];
   }
 
