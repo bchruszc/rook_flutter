@@ -13,16 +13,10 @@ class HomeRoute extends StatelessWidget {
         title: Text('Rook Score 2.0'),
       ),
       body: Column (
-        children: <Widget>[CreateGameButton(),LoadGameButton()
+        children: <Widget>[CreateGameButton(currentGame),LoadGameButton()
         ],
       )
     );
-        appBar: AppBar(
-          title: Text('Rook'),
-        ),
-        body: Column(
-          children: <Widget>[CreateGame(currentGame), LoadGame()],
-        ));
   }
 }
 
