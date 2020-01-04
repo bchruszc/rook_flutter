@@ -9,6 +9,14 @@ class HomeRoute extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text('Rook Score 2.0'),
+      ),
+      body: Column (
+        children: <Widget>[CreateGameButton(),LoadGameButton()
+        ],
+      )
+    );
         appBar: AppBar(
           title: Text('Rook'),
         ),
@@ -18,10 +26,10 @@ class HomeRoute extends StatelessWidget {
   }
 }
 
-class CreateGame extends StatelessWidget {
+class CreateGameButton extends StatelessWidget{
   GameInfo currentGame;
 
-  CreateGame(this.currentGame);
+  CreateGameButton(this.currentGame);
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +57,7 @@ class CreateGame extends StatelessWidget {
 
 }
 
-class LoadGame extends StatelessWidget {
+class LoadGameButton extends StatelessWidget{
   @override
   Widget build(BuildContext context) {
     return Center(
