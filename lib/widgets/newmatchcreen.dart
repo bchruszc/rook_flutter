@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:rook_flutter/models/game.dart';
 
@@ -12,55 +13,38 @@ class PartnerSelection extends NewGameExpandableItem {
       State expandedState, List<NewGameExpandableItem> items) {
     return ExpansionPanel(
       headerBuilder: (BuildContext context, bool isExpanded) {
-//        return ListTile(
-//          title: Text(newMatch.partners.length>0?newMatch.partners.map((player)=>player.name).join(','):'No Partners'),
-//        );
-
         if (newMatch.partners.length == 0) {
           return Text('No Partners');
         } else {
-          return Row(
+          return Wrap(
+              spacing: 2.0,
+              direction: Axis.horizontal,
               children: newMatch.partners.map<FlatButton>((Player player) {
-            return FlatButton(
-              onPressed: () {
-                expandedState.setState(() {
-                  newMatch.partners.remove(player);
-                });
-              },
-              child: Text(player.name, style: TextStyle(fontSize: 16)),
-            );
-          }).toList());
+                return FlatButton(
+                  onPressed: () {
+                    expandedState.setState(() {
+                      newMatch.partners.remove(player);
+                    });
+                  },
+                  child: Text(player.name, style: TextStyle(fontSize: 16)),
+                );
+              }).toList());
         }
-
-        return Text(newMatch.partners.length > 0
-            ? newMatch.partners.map((player) => player.name).join(',')
-            : 'No Partners');
-//      return Dismissible(
-//        key: Key('player'),
-//        onDismissed: (direction){
-//          expandedState.setState(() {
-//              newMatch.partners.clear();
-//          });
-//          Text('No Partners');
-////          Scaffold
-////              .of(context)
-////              .showSnackBar(SnackBar(content: Text("dismissed")));
-//        },
-//        child: Text(newMatch.partners.length>0?newMatch.partners.map((player)=>player.name).join(','):'No Partners'),
-//      );
       },
       body: Container(
-        child: Row(
+        child: Wrap(
+            spacing: 2.0,
+            direction: Axis.horizontal,
             children: players.map<RaisedButton>((Player player) {
-          return RaisedButton(
-            onPressed: () {
-              expandedState.setState(() {
-                newMatch.partners.add(player);
-              });
-            },
-            child: Text(player.name, style: TextStyle(fontSize: 20)),
-          );
-        }).toList()),
+              return RaisedButton(
+                onPressed: () {
+                  expandedState.setState(() {
+                    newMatch.partners.add(player);
+                  });
+                },
+                child: Text(player.name, style: TextStyle(fontSize: 20)),
+              );
+            }).toList()),
       ),
       isExpanded: isExpanded,
     );
@@ -194,13 +178,28 @@ class BasicItem extends NewGameExpandableItem {
 abstract class NewGameExpandableItem {
   final NewMatch newMatch;
   bool isExpanded = false;
+  bool isLocked;
 
-  NewGameExpandableItem(
-    this.newMatch,
-    this.isExpanded,
-  );
+  NewGameExpandableItem(this.newMatch, this.isExpanded,
+      {this.isLocked = false});
 
   ExpansionPanel create(State state, List<NewGameExpandableItem> items);
+}
+
+//Entry
+class NewMatchWidget extends StatelessWidget {
+  final GameInfo game;
+
+  NewMatchWidget(this.game);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: Text("New Match"),
+        ),
+        body: ExpansionStateWidget(game));
+  }
 }
 
 class ExpansionStateWidget extends StatefulWidget {

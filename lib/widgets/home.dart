@@ -2,26 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:rook_flutter/models/game.dart';
 
 class HomeRoute extends StatelessWidget {
-  GameInfo currentGame;
+  final GameInfo currentGame;
 
   HomeRoute(this.currentGame);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Rook Score 2.0'),
-      ),
-      body: Column (
-        children: <Widget>[CreateGameButton(currentGame),LoadGameButton()
-        ],
-      )
-    );
+        appBar: AppBar(
+          title: Text('Rook Score 2.0'),
+        ),
+        body: Column(
+          children: <Widget>[CreateGameButton(currentGame), LoadGameButton()],
+        ));
   }
 }
 
-class CreateGameButton extends StatelessWidget{
-  GameInfo currentGame;
+class CreateGameButton extends StatelessWidget {
+  final GameInfo currentGame;
 
   CreateGameButton(this.currentGame);
 
@@ -51,7 +49,7 @@ class CreateGameButton extends StatelessWidget{
 
 }
 
-class LoadGameButton extends StatelessWidget{
+class LoadGameButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(

@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:frideos/frideos.dart';
+import 'package:frideos_core/frideos_core.dart';
 import 'package:rook_flutter/models/game.dart';
 import 'package:rook_flutter/models/listitem.dart';
 import 'package:rook_flutter/shared/inheritedprovider.dart';
-import 'package:frideos_core/frideos_core.dart';
-import 'package:frideos/frideos.dart';
-
 
 class PlayerSelection extends StatefulWidget {
-  List<ListItem<Player>> items;
-  GameInfo game;
+  final List<ListItem<Player>> items;
+  final GameInfo game;
 
   PlayerSelection(this.items, this.game);
 
@@ -17,9 +16,9 @@ class PlayerSelection extends StatefulWidget {
 }
 
 class PlayerSelectionState extends State<PlayerSelection> {
-  List<ListItem<Player>> items;
-  GameInfo game;
-  StreamedValue<bool> disableButton = StreamedValue();
+  final List<ListItem<Player>> items;
+  final GameInfo game;
+  final StreamedValue<bool> disableButton = StreamedValue();
 
   PlayerSelectionState(this.items, this.game);
 
@@ -27,6 +26,12 @@ class PlayerSelectionState extends State<PlayerSelection> {
   void initState() {
     super.initState();
     disableButton.value = true;
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    disableButton.dispose();
   }
 
   @override
@@ -60,9 +65,9 @@ class PlayerSelectionState extends State<PlayerSelection> {
             items[index].isSelected = !items[index].isSelected;
           });
           if (items[index].isSelected) {
-            game.players.add(items[index].data);
+            game.addPlayer(items[index].data);
           } else {
-            game.players.remove(items[index].data);
+            game.removePlayer(items[index].data);
           }
           updateButtonState(disableButton);
         }
@@ -70,8 +75,8 @@ class PlayerSelectionState extends State<PlayerSelection> {
       onLongPress: () {
         setState(() {
           items[index].isSelected = true;
-          game.players.add(items[index].data);
         });
+        game.addPlayer(items[index].data);
         updateButtonState(disableButton);
       },
       child: Container(
@@ -85,13 +90,7 @@ class PlayerSelectionState extends State<PlayerSelection> {
   }
 
   updateButtonState(StreamedValue<bool> disableButton) {
-    if (game.players.length == 4 ||
-        game.players.length == 5 ||
-        game.players.length == 6) {
-      disableButton.value = false;
-    } else {
-      disableButton.value = true;
-    }
+    disableButton.value = !game.hasEnoughPlayer();
     disableButton.refresh();
   }
 }
@@ -102,15 +101,16 @@ class DoneButton extends StatefulWidget {
 }
 
 class DoneButtonState extends State<DoneButton> {
-  DoneButtonState();
 
   @override
   Widget build(BuildContext context) {
-    final StreamedValue<bool> disableButton = InheritedProvider.of<bool>(context).inheritedData;
+    final StreamedValue<bool> disableButton =
+        InheritedProvider.of<bool>(context).inheritedData;
     return FlatButton(
       child: Text('Done',
           style: TextStyle(
-              color: disableButton.value ? Colors.grey : Colors.white, fontSize: 20)),
+              color: disableButton.value ? Colors.grey : Colors.white,
+              fontSize: 20)),
       onPressed: () {
         disableButton.value ? null : Navigator.pushNamed(context, '/LoadGame');
       },
