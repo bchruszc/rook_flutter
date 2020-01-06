@@ -2,64 +2,15 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:rook_flutter/models/game.dart';
 
-class PartnerSelection extends NewGameExpandableItem {
-  final List<Player> players;
-
-  PartnerSelection(NewMatch newMatch, this.players, {bool isExpanded = false})
-      : super(newMatch, isExpanded);
-
-  @override
-  ExpansionPanel create(
-      State expandedState, List<NewGameExpandableItem> items) {
-    return ExpansionPanel(
-      headerBuilder: (BuildContext context, bool isExpanded) {
-        if (newMatch.partners.length == 0) {
-          return Text('No Partners');
-        } else {
-          return Wrap(
-              spacing: 2.0,
-              direction: Axis.horizontal,
-              children: newMatch.partners.map<FlatButton>((Player player) {
-                return FlatButton(
-                  onPressed: () {
-                    expandedState.setState(() {
-                      newMatch.partners.remove(player);
-                    });
-                  },
-                  child: Text(player.name, style: TextStyle(fontSize: 16)),
-                );
-              }).toList());
-        }
-      },
-      body: Container(
-        child: Wrap(
-            spacing: 2.0,
-            direction: Axis.horizontal,
-            children: players.map<RaisedButton>((Player player) {
-              return RaisedButton(
-                onPressed: () {
-                  expandedState.setState(() {
-                    newMatch.partners.add(player);
-                  });
-                },
-                child: Text(player.name, style: TextStyle(fontSize: 20)),
-              );
-            }).toList()),
-      ),
-      isExpanded: isExpanded,
-    );
-  }
-}
-
 class CallerSelection extends NewGameExpandableItem {
   final List<Player> players;
 
   CallerSelection(NewMatch newMatch, this.players, {bool isExpanded = false})
-      : super(newMatch, isExpanded);
+      : super(newMatch, isExpanded, false);
 
   @override
-  ExpansionPanel create(
-      State expandedState, List<NewGameExpandableItem> items) {
+  ExpansionPanel create(State expandedState, List<NewGameExpandableItem> items,
+      BuildContext context) {
     return ExpansionPanel(
       headerBuilder: (BuildContext context, bool isExpanded) {
         return ListTile(
@@ -79,6 +30,10 @@ class CallerSelection extends NewGameExpandableItem {
                         ? newMatch.bidder = null
                         : newMatch.bidder = player;
                     isExpanded = false; //we made a selection unexpand section
+                    if (newMatch.bidder != null) {
+                      items[1].isExpanded = true;
+                      items[1].isLocked = false;
+                    }
                   });
                 },
                 child: Text(player.name, style: TextStyle(fontSize: 20)),
@@ -91,11 +46,13 @@ class CallerSelection extends NewGameExpandableItem {
 }
 
 class SliderItem extends NewGameExpandableItem {
-  SliderItem(NewMatch newMatch, {bool isExpanded = false})
-      : super(newMatch, isExpanded);
+  SliderItem(NewMatch newMatch,
+      {bool isExpanded = false, bool isLocked = false})
+      : super(newMatch, isExpanded, isLocked);
 
   @override
-  ExpansionPanel create(State expandState, List<NewGameExpandableItem> items) {
+  ExpansionPanel create(State expandState, List<NewGameExpandableItem> items,
+      BuildContext context) {
     return ExpansionPanel(
       headerBuilder: (BuildContext context, bool isExpanded) {
         return ListTile(
@@ -146,13 +103,64 @@ class SliderState extends State<SliderWidget> {
   }
 }
 
+class PartnerSelection extends NewGameExpandableItem {
+  final List<Player> players;
+
+  PartnerSelection(NewMatch newMatch, this.players,
+      {bool isExpanded = false, bool isLocked = false})
+      : super(newMatch, isExpanded, isLocked);
+
+  @override
+  ExpansionPanel create(State expandedState, List<NewGameExpandableItem> items,
+      BuildContext context) {
+    return ExpansionPanel(
+      headerBuilder: (BuildContext context, bool isExpanded) {
+        if (newMatch.partners.length == 0) {
+          return Text('No Partners');
+        } else {
+          return Wrap(
+              spacing: 2.0,
+              direction: Axis.horizontal,
+              children: newMatch.partners.map<FlatButton>((Player player) {
+                return FlatButton(
+                  onPressed: () {
+                    expandedState.setState(() {
+                      newMatch.partners.remove(player);
+                    });
+                  },
+                  child: Text(player.name, style: TextStyle(fontSize: 16)),
+                );
+              }).toList());
+        }
+      },
+      body: Container(
+        child: Wrap(
+            spacing: 2.0,
+            direction: Axis.horizontal,
+            children: players.map<RaisedButton>((Player player) {
+              return RaisedButton(
+                onPressed: () {
+                  expandedState.setState(() {
+                    newMatch.partners.add(player);
+                  });
+                },
+                child: Text(player.name, style: TextStyle(fontSize: 20)),
+              );
+            }).toList()),
+      ),
+      isExpanded: isExpanded,
+    );
+  }
+}
+
 // For testing
 class BasicItem extends NewGameExpandableItem {
   BasicItem(NewMatch newMatch, {bool isExpanded = false})
-      : super(newMatch, isExpanded);
+      : super(newMatch, isExpanded, true);
 
   @override
-  ExpansionPanel create(State state, List<NewGameExpandableItem> items) {
+  ExpansionPanel create(
+      State state, List<NewGameExpandableItem> items, BuildContext context) {
     return ExpansionPanel(
       headerBuilder: (BuildContext context, bool isExpanded) {
         return ListTile(
@@ -178,12 +186,14 @@ class BasicItem extends NewGameExpandableItem {
 abstract class NewGameExpandableItem {
   final NewMatch newMatch;
   bool isExpanded = false;
-  bool isLocked;
+  bool
+      isLocked; //want to try and lock the other items if the ones before are not set yet
+  //do this through streams, hierarchy?
 
-  NewGameExpandableItem(this.newMatch, this.isExpanded,
-      {this.isLocked = false});
+  NewGameExpandableItem(this.newMatch, this.isExpanded, this.isLocked);
 
-  ExpansionPanel create(State state, List<NewGameExpandableItem> items);
+  ExpansionPanel create(
+      State state, List<NewGameExpandableItem> items, BuildContext context);
 }
 
 //Entry
@@ -221,9 +231,8 @@ class ExpansionControls extends State<ExpansionStateWidget> {
     this.game = game;
     newItems = [
       CallerSelection(newMatch, game.players),
-      SliderItem(newMatch),
-      PartnerSelection(newMatch, game.players),
-      BasicItem(newMatch)
+      SliderItem(newMatch, isLocked: true),
+      PartnerSelection(newMatch, game.players, isLocked: true)
     ];
   }
 
@@ -231,21 +240,23 @@ class ExpansionControls extends State<ExpansionStateWidget> {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: Container(
-        child: buildPanel(),
+        child: buildPanel(context),
       ),
     );
   }
 
-  Widget buildPanel() {
+  Widget buildPanel(BuildContext context) {
     return SafeArea(
       child: ExpansionPanelList(
         expansionCallback: (int index, bool isExpanded) {
-          setState(() {
-            newItems[index].isExpanded = !isExpanded;
-          });
+          if (!newItems[index].isLocked) {
+            setState(() {
+              newItems[index].isExpanded = !isExpanded;
+            });
+          }
         },
         children: newItems.map<ExpansionPanel>((NewGameExpandableItem item) {
-          return item.create(this, newItems);
+          return item.create(this, newItems, context);
         }).toList(),
       ),
     );
