@@ -5,7 +5,7 @@ import 'package:rook_flutter/models/game.dart';
 class CallerSelection extends NewGameExpandableItem {
   final List<Player> players;
 
-  CallerSelection(NewMatch newMatch, this.players, {bool isExpanded = false})
+  CallerSelection(Match newMatch, this.players, {bool isExpanded = false})
       : super(newMatch, isExpanded, false);
 
   @override
@@ -30,10 +30,7 @@ class CallerSelection extends NewGameExpandableItem {
                         ? newMatch.bidder = null
                         : newMatch.bidder = player;
                     isExpanded = false; //we made a selection unexpand section
-                    if (newMatch.bidder != null) {
-                      items[1].isExpanded = true;
-                      items[1].isLocked = false;
-                    }
+                    doLockAndEnableLogic(newMatch, items);
                   });
                 },
                 child: Text(player.name, style: TextStyle(fontSize: 20)),
@@ -45,8 +42,8 @@ class CallerSelection extends NewGameExpandableItem {
   }
 }
 
-class SliderItem extends NewGameExpandableItem {
-  SliderItem(NewMatch newMatch,
+class BidSliderItem extends NewGameExpandableItem {
+  BidSliderItem(Match newMatch,
       {bool isExpanded = false, bool isLocked = false})
       : super(newMatch, isExpanded, isLocked);
 
@@ -59,27 +56,27 @@ class SliderItem extends NewGameExpandableItem {
           title: Text("Current Bid: " + newMatch.bid.toString()),
         );
       },
-      body: SliderWidget(newMatch, expandState),
+      body: BidSliderWidget(newMatch, expandState),
       isExpanded: isExpanded,
     );
   }
 }
 
-class SliderWidget extends StatefulWidget {
-  final NewMatch newMatch;
+class BidSliderWidget extends StatefulWidget {
+  final Match newMatch;
   final State expandState;
 
-  SliderWidget(this.newMatch, this.expandState);
+  BidSliderWidget(this.newMatch, this.expandState);
 
   @override
-  SliderState createState() => SliderState(newMatch, expandState);
+  BidSliderState createState() => BidSliderState(newMatch, expandState);
 }
 
-class SliderState extends State<SliderWidget> {
-  NewMatch newMatch;
+class BidSliderState extends State<BidSliderWidget> {
+  Match newMatch;
   State expandState;
 
-  SliderState(this.newMatch, this.expandState);
+  BidSliderState(this.newMatch, this.expandState);
 
   @override
   Widget build(BuildContext context) {
@@ -106,7 +103,7 @@ class SliderState extends State<SliderWidget> {
 class PartnerSelection extends NewGameExpandableItem {
   final List<Player> players;
 
-  PartnerSelection(NewMatch newMatch, this.players,
+  PartnerSelection(Match newMatch, this.players,
       {bool isExpanded = false, bool isLocked = false})
       : super(newMatch, isExpanded, isLocked);
 
@@ -126,6 +123,7 @@ class PartnerSelection extends NewGameExpandableItem {
                   onPressed: () {
                     expandedState.setState(() {
                       newMatch.partners.remove(player);
+                      doLockAndEnableLogic(newMatch, items);
                     });
                   },
                   child: Text(player.name, style: TextStyle(fontSize: 16)),
@@ -142,6 +140,7 @@ class PartnerSelection extends NewGameExpandableItem {
                 onPressed: () {
                   expandedState.setState(() {
                     newMatch.partners.add(player);
+                    doLockAndEnableLogic(newMatch, items);
                   });
                 },
                 child: Text(player.name, style: TextStyle(fontSize: 20)),
@@ -153,9 +152,70 @@ class PartnerSelection extends NewGameExpandableItem {
   }
 }
 
+class MadeSliderItem extends NewGameExpandableItem {
+  MadeSliderItem(Match newMatch,
+      {bool isExpanded = false, bool isLocked = false})
+      : super(newMatch, isExpanded, isLocked);
+
+  @override
+  ExpansionPanel create(State expandState, List<NewGameExpandableItem> items,
+      BuildContext context) {
+    return ExpansionPanel(
+      headerBuilder: (BuildContext context, bool isExpanded) {
+        return ListTile(
+          title: Text("Made: " +
+              newMatch.madeValue().toString() +
+              " Lost: " +
+              newMatch.lostValue().toString()),
+        );
+      },
+      body: MadeSliderWidget(newMatch, expandState),
+      isExpanded: isExpanded,
+    );
+  }
+}
+
+class MadeSliderWidget extends StatefulWidget {
+  final Match newMatch;
+  final State expandState;
+
+  MadeSliderWidget(this.newMatch, this.expandState);
+
+  @override
+  MadeSliderState createState() => MadeSliderState(newMatch, expandState);
+}
+
+class MadeSliderState extends State<MadeSliderWidget> {
+  Match newMatch;
+  State expandState;
+
+  MadeSliderState(this.newMatch, this.expandState);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Slider(
+        value: newMatch.made,
+        min: 100,
+        max: 180,
+        divisions: 16,
+        label: 'Made',
+        onChanged: (newrating) {
+          setState(() {
+            newMatch.made = newrating;
+          });
+          expandState.setState(() {
+            newMatch.made = newrating;
+          });
+        },
+      ),
+    );
+  }
+}
+
 // For testing
 class BasicItem extends NewGameExpandableItem {
-  BasicItem(NewMatch newMatch, {bool isExpanded = false})
+  BasicItem(Match newMatch, {bool isExpanded = false})
       : super(newMatch, isExpanded, true);
 
   @override
@@ -184,7 +244,7 @@ class BasicItem extends NewGameExpandableItem {
 
 // stores ExpansionPanel state information
 abstract class NewGameExpandableItem {
-  final NewMatch newMatch;
+  final Match newMatch;
   bool isExpanded = false;
   bool
       isLocked; //want to try and lock the other items if the ones before are not set yet
@@ -218,21 +278,22 @@ class ExpansionStateWidget extends StatefulWidget {
   ExpansionStateWidget(this.game, {Key key}) : super(key: key);
 
   @override
-  ExpansionControls createState() => ExpansionControls(NewMatch(), game);
+  ExpansionControls createState() => ExpansionControls(Match(), game);
 }
 
 class ExpansionControls extends State<ExpansionStateWidget> {
-  NewMatch newMatch;
+  Match newMatch;
   GameInfo game;
   List<NewGameExpandableItem> newItems;
 
-  ExpansionControls(NewMatch newMatch, GameInfo game) {
+  ExpansionControls(Match newMatch, GameInfo game) {
     this.newMatch = newMatch;
     this.game = game;
     newItems = [
       CallerSelection(newMatch, game.players),
-      SliderItem(newMatch, isLocked: true),
-      PartnerSelection(newMatch, game.players, isLocked: true)
+      BidSliderItem(newMatch, isLocked: true),
+      PartnerSelection(newMatch, game.players, isLocked: true),
+      MadeSliderItem(newMatch, isLocked: true)
     ];
   }
 
@@ -260,5 +321,27 @@ class ExpansionControls extends State<ExpansionStateWidget> {
         }).toList(),
       ),
     );
+  }
+}
+
+doLockAndEnableLogic(Match match, List<NewGameExpandableItem> items) {
+  if (match.bidder != null) {
+    items[1].isExpanded = true;
+    items[1].isLocked = false;
+    items[2].isExpanded = true;
+    items[2].isLocked = false;
+  } else {
+    items[1].isExpanded = false;
+    items[1].isLocked = true;
+    items[2].isExpanded = false;
+    items[2].isLocked = true;
+  }
+
+  if (match.isMatchSetup()) {
+    items[3].isExpanded = true;
+    items[3].isLocked = false;
+  } else {
+    items[3].isExpanded = false;
+    items[3].isLocked = true;
   }
 }

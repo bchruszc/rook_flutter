@@ -14,7 +14,7 @@ List<Player> players = [
 ];
 
 void main() {
-  NewMatch currentMatch;
+  Match currentMatch;
   GameInfo currentGame;
 
   runApp(MaterialApp(
@@ -27,8 +27,9 @@ void main() {
             players.map((player) => ListItem(player)).toList(), currentGame);
       },
       '/LoadGame': (context) {
-        currentGame = GameInfo();
-        currentGame.players = players;
+        if(currentGame==null){
+          currentGame=GameInfo();
+        }
         return NewMatchWidget(currentGame);
       } //todo for games not matches
     },

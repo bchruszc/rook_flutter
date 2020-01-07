@@ -55,6 +55,7 @@ class LoadGameButton extends StatelessWidget {
     return Center(
       child: RaisedButton(
         child: Text('Load Game'),
+
         onPressed: () {
           Navigator.pushNamed(context, '/LoadGame');
         },
