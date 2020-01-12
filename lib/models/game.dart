@@ -1,3 +1,5 @@
+import 'package:rook_flutter/models/listitem.dart';
+
 class GameInfo {
   List<Player> players = List();
   List<Match> matches = List();
@@ -5,6 +7,11 @@ class GameInfo {
 
   addPlayer(Player player) {
     players.add(player);
+  }
+
+  recordCurrentMatch() {
+    matches.add(currentMatch);
+    currentMatch=null;
   }
 
   removePlayer(Player player) {
@@ -17,6 +24,10 @@ class GameInfo {
 
   bool hasEnoughPlayer() {
     return players.length == 4 || players.length == 5 || players.length == 6;
+  }
+
+  List<ListItem<Match>> getMatchListItems(){
+    return matches.map((match) => ListItem(match)).toList();
   }
 }
 

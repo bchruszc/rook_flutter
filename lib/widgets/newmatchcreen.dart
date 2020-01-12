@@ -1,15 +1,74 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:frideos/frideos.dart';
+import 'package:frideos_core/frideos_core.dart';
 import 'package:rook_flutter/models/game.dart';
+import 'package:rook_flutter/shared/inheritedprovider.dart';
+import 'package:rook_flutter/widgets/scorescreen.dart';
 
-class CallerSelection extends NewGameExpandableItem {
+//typedef WidgetBuilder = Widget Function(BuildContext context,int index);
+
+//Entry
+class NewMatchWidget extends StatefulWidget {
+  static const String Id = '/NewMatch';
+  GameInfo game;
+
+  NewMatchWidget({Key key, @required this.game}) : super(key: key);
+
+  @override
+  NewMatchWidgetState createState() => NewMatchWidgetState();
+}
+
+class NewMatchWidgetState extends State<NewMatchWidget> {
+  final StreamedValue<bool> disableButton = StreamedValue();
+
+  @override
+  void initState() {
+    super.initState();
+    widget.game.currentMatch = Match();
+    disableButton.value = true;
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    disableButton.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("New Match"),
+        actions: <Widget>[
+          InheritedProvider<bool>(
+            inheritedData: disableButton,
+            child: StreamedWidget(
+              stream: disableButton.outStream,
+              builder: (context, snapshot) {
+                return DoneButton(widget.game);
+              },
+            ),
+          )
+        ],
+      ),
+      body: new Builder(
+        builder: (context) {
+          return ExpansionStateWidget(widget.game, disableButton);
+        },
+      ),
+    );
+  }
+}
+
+class CallerSelection extends NewMatchExpandableItem {
   final List<Player> players;
 
-  CallerSelection(Match newMatch, this.players, {bool isExpanded = false})
+  CallerSelection(Match newMatch, this.players, {bool isExpanded = true})
       : super(newMatch, isExpanded, false);
 
   @override
-  ExpansionPanel create(State expandedState, List<NewGameExpandableItem> items,
+  ExpansionPanel create(State expandedState, List<NewMatchExpandableItem> items,
       BuildContext context) {
     return ExpansionPanel(
       headerBuilder: (BuildContext context, bool isExpanded) {
@@ -42,13 +101,13 @@ class CallerSelection extends NewGameExpandableItem {
   }
 }
 
-class BidSliderItem extends NewGameExpandableItem {
+class BidSliderItem extends NewMatchExpandableItem {
   BidSliderItem(Match newMatch,
       {bool isExpanded = false, bool isLocked = false})
       : super(newMatch, isExpanded, isLocked);
 
   @override
-  ExpansionPanel create(State expandState, List<NewGameExpandableItem> items,
+  ExpansionPanel create(State expandState, List<NewMatchExpandableItem> items,
       BuildContext context) {
     return ExpansionPanel(
       headerBuilder: (BuildContext context, bool isExpanded) {
@@ -100,7 +159,7 @@ class BidSliderState extends State<BidSliderWidget> {
   }
 }
 
-class PartnerSelection extends NewGameExpandableItem {
+class PartnerSelection extends NewMatchExpandableItem {
   final List<Player> players;
 
   PartnerSelection(Match newMatch, this.players,
@@ -108,7 +167,7 @@ class PartnerSelection extends NewGameExpandableItem {
       : super(newMatch, isExpanded, isLocked);
 
   @override
-  ExpansionPanel create(State expandedState, List<NewGameExpandableItem> items,
+  ExpansionPanel create(State expandedState, List<NewMatchExpandableItem> items,
       BuildContext context) {
     return ExpansionPanel(
       headerBuilder: (BuildContext context, bool isExpanded) {
@@ -152,13 +211,15 @@ class PartnerSelection extends NewGameExpandableItem {
   }
 }
 
-class MadeSliderItem extends NewGameExpandableItem {
-  MadeSliderItem(Match newMatch,
+class MadeSliderItem extends NewMatchExpandableItem {
+  StreamedValue<bool> disableButton;
+
+  MadeSliderItem(Match newMatch, this.disableButton,
       {bool isExpanded = false, bool isLocked = false})
       : super(newMatch, isExpanded, isLocked);
 
   @override
-  ExpansionPanel create(State expandState, List<NewGameExpandableItem> items,
+  ExpansionPanel create(State expandState, List<NewMatchExpandableItem> items,
       BuildContext context) {
     return ExpansionPanel(
       headerBuilder: (BuildContext context, bool isExpanded) {
@@ -169,7 +230,9 @@ class MadeSliderItem extends NewGameExpandableItem {
               newMatch.lostValue().toString()),
         );
       },
-      body: MadeSliderWidget(newMatch, expandState),
+      body: new Builder(builder: (context) {
+        return MadeSliderWidget(newMatch, disableButton, expandState);
+      }),
       isExpanded: isExpanded,
     );
   }
@@ -178,16 +241,17 @@ class MadeSliderItem extends NewGameExpandableItem {
 class MadeSliderWidget extends StatefulWidget {
   final Match newMatch;
   final State expandState;
+  StreamedValue<bool> disableButton;
 
-  MadeSliderWidget(this.newMatch, this.expandState);
+  MadeSliderWidget(this.newMatch, this.disableButton, this.expandState);
 
   @override
   MadeSliderState createState() => MadeSliderState(newMatch, expandState);
 }
 
 class MadeSliderState extends State<MadeSliderWidget> {
-  Match newMatch;
-  State expandState;
+  final Match newMatch;
+  final State expandState;
 
   MadeSliderState(this.newMatch, this.expandState);
 
@@ -207,6 +271,7 @@ class MadeSliderState extends State<MadeSliderWidget> {
           expandState.setState(() {
             newMatch.made = newrating;
           });
+          widget.disableButton.value = false;
         },
       ),
     );
@@ -214,13 +279,13 @@ class MadeSliderState extends State<MadeSliderWidget> {
 }
 
 // For testing
-class BasicItem extends NewGameExpandableItem {
+class BasicItem extends NewMatchExpandableItem {
   BasicItem(Match newMatch, {bool isExpanded = false})
       : super(newMatch, isExpanded, true);
 
   @override
   ExpansionPanel create(
-      State state, List<NewGameExpandableItem> items, BuildContext context) {
+      State state, List<NewMatchExpandableItem> items, BuildContext context) {
     return ExpansionPanel(
       headerBuilder: (BuildContext context, bool isExpanded) {
         return ListTile(
@@ -243,65 +308,53 @@ class BasicItem extends NewGameExpandableItem {
 }
 
 // stores ExpansionPanel state information
-abstract class NewGameExpandableItem {
+abstract class NewMatchExpandableItem {
   final Match newMatch;
   bool isExpanded = false;
   bool
       isLocked; //want to try and lock the other items if the ones before are not set yet
   //do this through streams, hierarchy?
 
-  NewGameExpandableItem(this.newMatch, this.isExpanded, this.isLocked);
+  NewMatchExpandableItem(this.newMatch, this.isExpanded, this.isLocked);
 
   ExpansionPanel create(
-      State state, List<NewGameExpandableItem> items, BuildContext context);
-}
-
-//Entry
-class NewMatchWidget extends StatelessWidget {
-  final GameInfo game;
-
-  NewMatchWidget(this.game);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-          title: Text("New Match"),
-        ),
-        body: ExpansionStateWidget(game));
-  }
+      State state, List<NewMatchExpandableItem> items, BuildContext context);
 }
 
 class ExpansionStateWidget extends StatefulWidget {
   final GameInfo game;
+  StreamedValue<bool> disableButton;
 
-  ExpansionStateWidget(this.game, {Key key}) : super(key: key);
+  ExpansionStateWidget(this.game, this.disableButton, {Key key})
+      : super(key: key);
 
   @override
-  ExpansionControls createState() => ExpansionControls(Match(), game);
+  ExpansionControls createState() => ExpansionControls();
 }
 
 class ExpansionControls extends State<ExpansionStateWidget> {
-  Match newMatch;
-  GameInfo game;
-  List<NewGameExpandableItem> newItems;
+  List<NewMatchExpandableItem> newItems;
 
-  ExpansionControls(Match newMatch, GameInfo game) {
-    this.newMatch = newMatch;
-    this.game = game;
+  @override
+  void initState() {
+    super.initState();
     newItems = [
-      CallerSelection(newMatch, game.players),
-      BidSliderItem(newMatch, isLocked: true),
-      PartnerSelection(newMatch, game.players, isLocked: true),
-      MadeSliderItem(newMatch, isLocked: true)
+      CallerSelection(widget.game.currentMatch, widget.game.players),
+      BidSliderItem(widget.game.currentMatch, isLocked: true),
+      PartnerSelection(widget.game.currentMatch, widget.game.players,
+          isLocked: true),
+      MadeSliderItem(widget.game.currentMatch, widget.disableButton,
+          isLocked: true)
     ];
   }
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      child: Container(
-        child: buildPanel(context),
+      child: new Builder(
+        builder: (context) {
+          return buildPanel(context);
+        },
       ),
     );
   }
@@ -316,7 +369,7 @@ class ExpansionControls extends State<ExpansionStateWidget> {
             });
           }
         },
-        children: newItems.map<ExpansionPanel>((NewGameExpandableItem item) {
+        children: newItems.map<ExpansionPanel>((NewMatchExpandableItem item) {
           return item.create(this, newItems, context);
         }).toList(),
       ),
@@ -324,7 +377,38 @@ class ExpansionControls extends State<ExpansionStateWidget> {
   }
 }
 
-doLockAndEnableLogic(Match match, List<NewGameExpandableItem> items) {
+class DoneButton extends StatefulWidget {
+  final GameInfo game;
+
+  DoneButton(this.game);
+
+  @override
+  DoneButtonState createState() => DoneButtonState();
+}
+
+class DoneButtonState extends State<DoneButton> {
+  @override
+  Widget build(BuildContext context) {
+    final StreamedValue<bool> disableButton =
+        InheritedProvider.of<bool>(context).inheritedData;
+    return FlatButton(
+      child: Text(
+        'Done',
+        style: TextStyle(
+            color: disableButton.value ? Colors.grey : Colors.white,
+            fontSize: 20),
+      ),
+      onPressed: () {
+        if (widget.game.currentMatch.isMatchSetup() && !disableButton.value) {
+          widget.game.recordCurrentMatch();
+          Navigator.pushNamed(context, Scoreboard.Id, arguments: widget.game);
+        }
+      },
+    );
+  }
+}
+
+doLockAndEnableLogic(Match match, List<NewMatchExpandableItem> items) {
   if (match.bidder != null) {
     items[1].isExpanded = true;
     items[1].isLocked = false;
@@ -338,6 +422,10 @@ doLockAndEnableLogic(Match match, List<NewGameExpandableItem> items) {
   }
 
   if (match.isMatchSetup()) {
+    items[1].isExpanded = false;
+    items[1].isLocked = false;
+    items[2].isExpanded = false;
+    items[2].isLocked = false;
     items[3].isExpanded = true;
     items[3].isLocked = false;
   } else {

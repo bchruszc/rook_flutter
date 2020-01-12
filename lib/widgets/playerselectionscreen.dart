@@ -4,23 +4,23 @@ import 'package:frideos_core/frideos_core.dart';
 import 'package:rook_flutter/models/game.dart';
 import 'package:rook_flutter/models/listitem.dart';
 import 'package:rook_flutter/shared/inheritedprovider.dart';
+import 'package:rook_flutter/widgets/newmatchcreen.dart';
 
+//Player selection entry
 class PlayerSelection extends StatefulWidget {
+  static const String Id = '/PlayerSelect';
   final List<ListItem<Player>> items;
   final GameInfo game;
 
-  PlayerSelection(this.items, this.game);
+  PlayerSelection({Key key, @required this.game, @required this.items})
+      : super(key: key);
 
   @override
-  PlayerSelectionState createState() => PlayerSelectionState(items, game);
+  PlayerSelectionState createState() => PlayerSelectionState();
 }
 
 class PlayerSelectionState extends State<PlayerSelection> {
-  final List<ListItem<Player>> items;
-  final GameInfo game;
   final StreamedValue<bool> disableButton = StreamedValue();
-
-  PlayerSelectionState(this.items, this.game);
 
   @override
   void initState() {
@@ -43,15 +43,16 @@ class PlayerSelectionState extends State<PlayerSelection> {
           InheritedProvider<bool>(
             inheritedData: disableButton,
             child: StreamedWidget(
-                stream: disableButton.outStream,
-                builder: (context, snapshot) {
-                  return DoneButton();
-                }),
+              stream: disableButton.outStream,
+              builder: (context, snapshot) {
+                return DoneButton(widget.game);
+              },
+            ),
           )
         ],
       ),
       body: ListView.builder(
-        itemCount: items.length,
+        itemCount: widget.items.length,
         itemBuilder: buildItemTile,
       ),
     );
@@ -60,48 +61,51 @@ class PlayerSelectionState extends State<PlayerSelection> {
   Widget buildItemTile(BuildContext context, int index) {
     return GestureDetector(
       onTap: () {
-        if (items.any((item) => item.isSelected)) {
+        if (widget.items.any((item) => item.isSelected)) {
           setState(() {
-            items[index].isSelected = !items[index].isSelected;
+            widget.items[index].isSelected = !widget.items[index].isSelected;
           });
-          if (items[index].isSelected) {
-            game.addPlayer(items[index].data);
+          if (widget.items[index].isSelected) {
+            widget.game.addPlayer(widget.items[index].data);
           } else {
-            game.removePlayer(items[index].data);
+            widget.game.removePlayer(widget.items[index].data);
           }
           updateButtonState(disableButton);
         }
       },
       onLongPress: () {
         setState(() {
-          items[index].isSelected = true;
+          widget.items[index].isSelected = true;
         });
-        game.addPlayer(items[index].data);
+        widget.game.addPlayer(widget.items[index].data);
         updateButtonState(disableButton);
       },
       child: Container(
         margin: EdgeInsets.symmetric(vertical: 4),
-        color: items[index].isSelected ? Colors.red[100] : Colors.white,
+        color: widget.items[index].isSelected ? Colors.red[100] : Colors.white,
         child: ListTile(
-          title: Text(items[index].data.name),
+          title: Text(widget.items[index].data.name),
         ),
       ),
     );
   }
 
   updateButtonState(StreamedValue<bool> disableButton) {
-    disableButton.value = !game.hasEnoughPlayer();
+    disableButton.value = !widget.game.hasEnoughPlayer();
     disableButton.refresh();
   }
 }
 
 class DoneButton extends StatefulWidget {
+  final GameInfo game;
+
+  DoneButton(this.game);
+
   @override
   DoneButtonState createState() => DoneButtonState();
 }
 
 class DoneButtonState extends State<DoneButton> {
-
   @override
   Widget build(BuildContext context) {
     final StreamedValue<bool> disableButton =
@@ -112,7 +116,10 @@ class DoneButtonState extends State<DoneButton> {
               color: disableButton.value ? Colors.grey : Colors.white,
               fontSize: 20)),
       onPressed: () {
-        disableButton.value ? null : Navigator.pushNamed(context, '/LoadGame');
+        disableButton.value
+            ? null
+            : Navigator.pushNamed(context, NewMatchWidget.Id,
+                arguments: widget.game);
       },
     );
   }
