@@ -33,6 +33,7 @@ class ScoreboardState extends State<Scoreboard> {
 
   @override
   Widget build(BuildContext context) {
+    List<ScorePlayer> scorePlayers = widget.game.buildScorePlayerList();
     return Scaffold(
         appBar: AppBar(
           title: Text("Score View"),
@@ -41,105 +42,68 @@ class ScoreboardState extends State<Scoreboard> {
         body: LayoutBuilder(
           builder: (context, constraints) => SingleChildScrollView(
             child: ConstrainedBox(
-              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+              constraints: BoxConstraints(maxWidth: constraints.maxWidth),
               //this doing anything?
               child: DataTable(
-                  sortColumnIndex: null,
-                  horizontalMargin: 1.0,
-                  columnSpacing: 20,
-                  //20,30,40?
-                  columns: [
-                    DataColumn(label: Text('MV'), numeric: true),
-                    DataColumn(label: Text('BC'), numeric: true),
-                    DataColumn(label: Text('BH'), numeric: true),
-                    DataColumn(label: Text('MV'), numeric: true),
-                    DataColumn(label: Text('BH'), numeric: true),
-                    DataColumn(label: Text('MV'), numeric: true),
-                    DataColumn(label: Text('')),
-                  ],
-                  rows: [
-                    DataRow(selected: true, cells: [
-                      DataCell(Text('1000')),
-                      DataCell(Text('1000')),
-                      DataCell(Text('1000')),
-                      DataCell(Text('1000')),
-                      DataCell(Text('1000')),
-                      DataCell(Text('1000')),
-                      DataCell(getBidInfo()),
-                    ]),
-                    DataRow(cells: [
-                      DataCell(Text('1000')),
-                      DataCell(Text('1000')),
-                      DataCell(Text('1000')),
-                      DataCell(Text('1000')),
-                      DataCell(Text('1000')),
-                      DataCell(Text('1000')),
-                      DataCell(getBidInfo()),
-                    ]),
-                    DataRow(cells: [
-                      DataCell(Text('1000')),
-                      DataCell(Text('1000')),
-                      DataCell(Text('1000')),
-                      DataCell(Text('1000')),
-                      DataCell(Text('1000')),
-                      DataCell(Text('1000')),
-                      DataCell(getBidInfo()),
-                    ]),
-                  ]),
+                sortColumnIndex: null,
+                horizontalMargin: 1.0,
+                columnSpacing: getColumnSpacing(),
+                //20,30,40?
+                columns: scorePlayers
+                    .map((scorePlayer) => DataColumn(
+                        label: getHeader(scorePlayer), numeric: true))
+                    .toList(),
+
+                rows: buildRows(scorePlayers),
+              ),
             ),
           ),
         ));
   }
 
-  Widget buildItemTile(BuildContext context, int index) {
-    if (index == 0) {
-      return Row(children: [
-        Center(child: Text("MV")),
-        Spacer(),
-        Text("BC"),
-        Spacer(),
-        Text("Ray"),
-        Spacer(),
-        Center(child: Text("Jeremy")),
-        Spacer(),
-        Text("Allan"),
-        Spacer(),
-        Text("BH"),
-        Spacer(),
-        Text(" "),
-      ]);
+  List<DataRow> buildRows(List<ScorePlayer> scorePlayers) {
+    List<Match> submittedMatches =
+        widget.game.matches.where((match) => match.submitted).toList();
+    if (submittedMatches.length >= 0) {
+      return submittedMatches
+          .map(
+            (match) => DataRow(cells: match.buildScoreLine(scorePlayers)),
+          )
+          .toList();
     } else {
-      return GestureDetector(
-        onDoubleTap: () {
-//        setState(() {
-//          matches.removeAt(index);
-//        });
-        },
-        child: Container(
-          margin: EdgeInsets.symmetric(vertical: 4),
-          color: Colors.white,
-          child: Row(children: [
-            Text("1111"),
-            Spacer(),
-            Text("2222"),
-            Spacer(),
-            Text("3333"),
-            Spacer(),
-            Text("4444"),
-            Spacer(),
-            Text("5555"),
-            Spacer(),
-            Text("6666"),
-            Spacer(),
-            getBidInfo()
-          ]),
-        ),
+      List<DataRow> rows = List();
+      rows.add(DataRow(
+          cells: scorePlayers
+              .map((sp) => DataCell(Wrap(children: [
+                    Text(sp.player == null
+                        ? ""
+                        : sp.currentScore.toInt().toString())
+                  ])))
+              .toList()));
+      return rows;
+    }
+  }
+
+  Widget getHeader(ScorePlayer player) {
+    if (player == null || player.player == null) {
+      return Wrap(
+        children: [Text("")],
+      );
+    } else {
+      return Wrap(
+        children: [Text(player.player.name)],
       );
     }
   }
 
-  Widget getBidInfo() {
-    return Text("(123) MV - BC BH");
+  double getColumnSpacing() {
+    if (widget.game.players.length == 4) {
+      return 30;
+    } else if (widget.game.players.length == 5) {
+      return 30;
+    } else {
+      return 20;
+    }
   }
 }
 

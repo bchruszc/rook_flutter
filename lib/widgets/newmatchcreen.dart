@@ -25,7 +25,7 @@ class NewMatchWidgetState extends State<NewMatchWidget> {
   @override
   void initState() {
     super.initState();
-    widget.game.currentMatch = Match();
+    widget.game.matches.add(Match());
     disableButton.value = true;
   }
 
@@ -339,11 +339,11 @@ class ExpansionControls extends State<ExpansionStateWidget> {
   void initState() {
     super.initState();
     newItems = [
-      CallerSelection(widget.game.currentMatch, widget.game.players),
-      BidSliderItem(widget.game.currentMatch, isLocked: true),
-      PartnerSelection(widget.game.currentMatch, widget.game.players,
+      CallerSelection(widget.game.getLatestMatch(), widget.game.players),
+      BidSliderItem(widget.game.getLatestMatch(), isLocked: true),
+      PartnerSelection(widget.game.getLatestMatch(), widget.game.players,
           isLocked: true),
-      MadeSliderItem(widget.game.currentMatch, widget.disableButton,
+      MadeSliderItem(widget.game.getLatestMatch(), widget.disableButton,
           isLocked: true)
     ];
   }
@@ -393,14 +393,14 @@ class DoneButtonState extends State<DoneButton> {
         InheritedProvider.of<bool>(context).inheritedData;
     return FlatButton(
       child: Text(
-        'Done',
+        'Submit',
         style: TextStyle(
             color: disableButton.value ? Colors.grey : Colors.white,
             fontSize: 20),
       ),
       onPressed: () {
-        if (widget.game.currentMatch.isMatchSetup() && !disableButton.value) {
-          widget.game.recordCurrentMatch();
+        if (widget.game.isLatestMatchSetup() && !disableButton.value) {
+          widget.game.getLatestMatch().submitted = true;
           Navigator.pushNamed(context, Scoreboard.Id, arguments: widget.game);
         }
       },
