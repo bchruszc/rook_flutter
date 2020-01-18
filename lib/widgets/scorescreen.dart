@@ -16,6 +16,8 @@ class Scoreboard extends StatefulWidget {
 
 class ScoreboardState extends State<Scoreboard> {
   List<ListItem<Match>> matches;
+  List<Match> submittedMatches;
+  List<ScorePlayer> _scorePlayers;
 
   ScoreboardState();
 
@@ -23,7 +25,30 @@ class ScoreboardState extends State<Scoreboard> {
   void initState() {
     super.initState();
     matches = widget.game.getMatchListItems();
-    matches.add(ListItem(Match()));
+    matches.add(ListItem(Match(widget.game.players.length)));
+    submittedMatches =
+        widget.game.matches.where((match) => match.submitted).toList();
+    _scorePlayers = widget.game.buildScorePlayerList();
+    //this call will populate the scores for the player
+    populateScoresForPlayer(_scorePlayers);
+    //TODO do STAR logic
+    _scorePlayers.sort((o1, o2) {
+      //player is null just for the summary. Technically both o1 and o2 can't be null
+      if (o1.player == null) {
+        return 1;
+      } else if (o2.player == null) {
+        return -1;
+      } else if (o1.player == null && o2.player == null) {
+        return 0;
+      } else {
+        if (o1.hasStar && !o2.hasStar) {
+          return -1;
+        } else if (!o1.hasStar && o2.hasStar) {
+          return 1;
+        }
+        return (o2.getLastScore() - o1.getLastScore()).toInt();
+      }
+    });
   }
 
   @override
@@ -33,77 +58,167 @@ class ScoreboardState extends State<Scoreboard> {
 
   @override
   Widget build(BuildContext context) {
-    List<ScorePlayer> scorePlayers = widget.game.buildScorePlayerList();
     return Scaffold(
-        appBar: AppBar(
-          title: Text("Score View"),
-          actions: <Widget>[DoneButton(game: widget.game)],
-        ),
-        body: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: constraints.maxWidth),
-              //this doing anything?
-              child: DataTable(
-                sortColumnIndex: null,
-                horizontalMargin: 1.0,
-                columnSpacing: getColumnSpacing(),
-                //20,30,40?
-                columns: scorePlayers
-                    .map((scorePlayer) => DataColumn(
-                        label: getHeader(scorePlayer), numeric: true))
-                    .toList(),
-
-                rows: buildRows(scorePlayers),
-              ),
-            ),
-          ),
-        ));
+      appBar: AppBar(
+        title: Text("Score View"),
+        actions: [DoneButton(game: widget.game)],
+      ),
+      body: Column(
+        children: <Widget>[
+          //buildHeader(_scorePlayers),
+          buildHeader(_scorePlayers),
+          Expanded(
+              child: ListView.builder(
+            itemCount: submittedMatches.length,
+            itemBuilder: buildItemTile,
+          ))
+        ],
+      ),
+    );
   }
 
-  List<DataRow> buildRows(List<ScorePlayer> scorePlayers) {
+  populateScoresForPlayer(List<ScorePlayer> players) {
     List<Match> submittedMatches =
         widget.game.matches.where((match) => match.submitted).toList();
     if (submittedMatches.length >= 0) {
-      return submittedMatches
-          .map(
-            (match) => DataRow(cells: match.buildScoreLine(scorePlayers)),
-          )
-          .toList();
+      submittedMatches.forEach((m) => m.buildScoreLine(players));
+    }
+  }
+
+  Widget buildHeader(List<ScorePlayer> scorePlayers) {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 4),
+      child: Container(
+        decoration: const BoxDecoration(
+          border: Border(
+            bottom: BorderSide(width: 1.0, color: Color(0xFFFF000000)),
+          ),
+        ),
+        child: buildHeaders(scorePlayers),
+      ),
+    );
+  }
+
+  Widget buildItemTile(BuildContext context, int index) {
+    Match match = submittedMatches[index];
+    LinearGradient grad = LinearGradient(colors: [Colors.white, Colors.green]);
+    if (!match.madeIt()) {
+      grad = LinearGradient(colors: [Colors.white, Colors.redAccent]);
+    }
+
+    Color gradColor = match.madeIt() ? Colors.green : Colors.red;
+    Color borderColor = getRoundColor(index);
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 4),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: grad,
+          border: Border(
+            bottom: BorderSide(width: 1.0, color: Colors.black),
+          ),
+        ),
+        child: buildMatchItem(index),
+      ),
+    );
+  }
+
+  Color getRoundColor(int index) {
+    if (index % _scorePlayers.length == 0) {
+      return Colors.green;
     } else {
-      List<DataRow> rows = List();
-      rows.add(DataRow(
-          cells: scorePlayers
-              .map((sp) => DataCell(Wrap(children: [
-                    Text(sp.player == null
-                        ? ""
-                        : sp.currentScore.toInt().toString())
-                  ])))
-              .toList()));
-      return rows;
+      return Colors.black;
+    }
+  }
+
+  Widget buildHeaders(List<ScorePlayer> scorePlayers) {
+    return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.max,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: scorePlayers.map((sp) => getHeader(sp)).toList());
+  }
+
+  Widget buildMatchItem(int rowIndex) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.max,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: _scorePlayers.map((sp) => buildScore(sp, rowIndex)).toList(),
+    );
+  }
+
+  Widget buildScore(ScorePlayer sp, int rowIndex) {
+    Match match = submittedMatches[rowIndex];
+
+    if (sp.player == null) {
+      return Container(
+        margin: EdgeInsets.only(left: 5.0),
+        child: SizedBox(
+            width: 80.0, child: buildMatchTextBox(sp, match, rowIndex)),
+      );
+    } else {
+      return Expanded(
+          child: Container(
+        alignment: Alignment.center,
+        child: buildMatchTextBox(sp, match, rowIndex),
+      ));
     }
   }
 
   Widget getHeader(ScorePlayer player) {
     if (player == null || player.player == null) {
-      return Wrap(
-        children: [Text("")],
+      return Container(
+        margin: EdgeInsets.only(left: 5.0),
+        child: SizedBox(width: 80.0, child: Text("")),
       );
     } else {
-      return Wrap(
-        children: [Text(player.player.name)],
-      );
+      return Expanded(child: buildStarHeader(player));
     }
   }
 
-  double getColumnSpacing() {
-    if (widget.game.players.length == 4) {
-      return 30;
-    } else if (widget.game.players.length == 5) {
-      return 30;
+  Text buildMatchTextBox(ScorePlayer sp, Match match, int rowIndex) {
+    return Text(sp.player == null
+        ? buildMatchSummary(match)
+        : sp.score[rowIndex].toInt().toString());
+  }
+
+  String buildMatchSummary(Match match) {
+    return "(" +
+        match.bid.toInt().toString() +
+        ") " +
+        match.bidder.getShortName() +
+        " - " +
+        match.partners.map((p) => p.getShortName()).join(' ');
+  }
+
+  Widget buildStarHeader(ScorePlayer sp) {
+    if (!sp.hasStar) {
+      return Container(alignment: Alignment.center, child: buildHeaderText(sp));
     } else {
-      return 20;
+      return Container(
+          alignment: Alignment.center,
+          child: Stack(
+            alignment: AlignmentDirectional.center,
+            children: [
+              IconTheme(
+                data: IconThemeData(
+                  color: Colors.lightBlue,
+                  size: 30,
+                ),
+                child: Icon(Icons.star),
+              ),
+              buildHeaderText(sp),
+            ],
+          ));
     }
+  }
+
+  Text buildHeaderText(ScorePlayer sp) {
+    return Text(sp.player.name,
+        style: TextStyle(
+          color: Colors.black,
+          fontSize: 16,
+        ));
   }
 }
 

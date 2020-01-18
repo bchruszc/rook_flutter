@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
+import 'dart:collection';
+
 import 'package:rook_flutter/models/listitem.dart';
 
 class GameInfo {
-  List<Player> players = List();
+  HashSet <Player> players = HashSet ();
   List<Match> matches = List();
 
   addPlayer(Player player) {
@@ -52,11 +53,20 @@ class GameInfo {
 class Match {
   Player bidder;
   double bid = 100;
-  int numberOfPlayers = 4;
+  final int numberOfPlayers;
   List<Player> partners = new List();
   double made = 100;
   bool submitted = false;
 
+  Match(this.numberOfPlayers);
+
+  getNumOfPartners(){
+    if(numberOfPlayers == 6){
+      return 2;
+    }else{
+      return 1;
+    }
+  }
   bool isMatchSetup() {
     if (bidder != null && bid != null) {
       if (((numberOfPlayers == 4 || numberOfPlayers == 5) &&
@@ -68,8 +78,8 @@ class Match {
     return false;
   }
 
-  List<DataCell> buildScoreLine(List<ScorePlayer> players) {
-    List<DataCell> scoreLine = List();
+
+  buildScoreLine(List<ScorePlayer> players) {
     double howMuchMade = made - bid;
     double otherTeamPoints = 180 - made;
     bool madeIT = howMuchMade >= 0;
@@ -79,25 +89,41 @@ class Match {
         if (scorePlayer.player == bidder ||
             partners.contains(scorePlayer.player)) {
           if (madeIT) {
-            scorePlayer.currentScore = scorePlayer.currentScore + made;
+            scorePlayer.score.add(
+                scorePlayer.getLastScore() + made + getBonus(bidder, partners));
+            if (scorePlayer.player == bidder) {
+              scorePlayer.hasStar = true;
+            }
           } else {
-            scorePlayer.currentScore = scorePlayer.currentScore - bid;
+            scorePlayer.score.add(scorePlayer.getLastScore() - bid);
           }
         } else {
-          scorePlayer.currentScore = scorePlayer.currentScore + otherTeamPoints;
+          scorePlayer.score.add(scorePlayer.getLastScore() + otherTeamPoints);
         }
-        scoreLine.add(DataCell(Wrap(children:[Text(scorePlayer.currentScore.toInt().toString())])));
-      } else {
-        scoreLine.add(DataCell(Wrap(children:[Text("(" +
-            bid.toInt().toString() +
-            ") " +
-            bidder.getShortName() +
-            " - " +
-            partners.map((p) => p.getShortName()).join(' '))])));
       }
     }
-    return scoreLine;
   }
+
+  int getBonus(Player bidder, List<Player> partners) {
+    int bonus = 0;
+    partners.forEach((p) => {
+          if (p == bidder) {bonus = bonus + getBonusValue()}
+        });
+    return bonus;
+  }
+
+  int getBonusValue() {
+    if (numberOfPlayers == 5) {
+      return 30;
+    } else {
+      return 20;
+    }
+  }
+
+  bool madeIt(){
+    return lostValue()<=0;
+  }
+
 
   double lostValue() {
     return bid - made;
@@ -108,15 +134,25 @@ class Match {
   }
 }
 
+//Built on demand class to build score
 class ScorePlayer {
   Player player;
-  double currentScore = 0; //temprary value used when building score
+  List<double> score = List();
+  bool hasStar = false;
 
   ScorePlayer(this.player);
 
   bool operator ==(o) => o is ScorePlayer && o.player == player;
 
   int get hashcode => player.hashCode;
+
+  double getLastScore() {
+    if (score.length > 0) {
+      return score[score.length - 1];
+    } else {
+      return 0;
+    }
+  }
 }
 
 class Player {
@@ -127,4 +163,7 @@ class Player {
   String getShortName() {
     return name.substring(0, 2); //fix me
   }
+  bool operator ==(o) => o is Player && o.name == name;
+
+  int get hashcode => name.hashCode;
 }

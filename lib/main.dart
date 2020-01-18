@@ -12,6 +12,7 @@ List<Player> players = [
   Player('Brad H'),
   Player('Ray'),
   Player('Jeremy'),
+  Player('Iqbal'),
 ];
 
 const String HomeRouteId = '/';
@@ -42,6 +43,8 @@ Route<dynamic> generateRoute(RouteSettings settings) {
           builder: (context) => NewMatchWidget(game: game));
     case Scoreboard.Id:
       return MaterialPageRoute(builder: (context) => Scoreboard(game: game));
+    case '\test':
+      return MaterialPageRoute(builder: (context) => ScoreView());
     default:
       return MaterialPageRoute(builder: (context) => HomeRoute(game: game));
   }

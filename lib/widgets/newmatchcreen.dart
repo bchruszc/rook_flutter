@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:frideos/frideos.dart';
@@ -25,7 +27,7 @@ class NewMatchWidgetState extends State<NewMatchWidget> {
   @override
   void initState() {
     super.initState();
-    widget.game.matches.add(Match());
+    widget.game.matches.add(Match(widget.game.players.length));
     disableButton.value = true;
   }
 
@@ -62,7 +64,7 @@ class NewMatchWidgetState extends State<NewMatchWidget> {
 }
 
 class CallerSelection extends NewMatchExpandableItem {
-  final List<Player> players;
+  final HashSet<Player> players;
 
   CallerSelection(Match newMatch, this.players, {bool isExpanded = true})
       : super(newMatch, isExpanded, false);
@@ -73,28 +75,37 @@ class CallerSelection extends NewMatchExpandableItem {
     return ExpansionPanel(
       headerBuilder: (BuildContext context, bool isExpanded) {
         return ListTile(
-          title: Text(newMatch.bidder != null
-              ? "Bidder: " + newMatch.bidder.name
-              : 'Select Caller'),
+          title: Text(
+              newMatch.bidder != null
+                  ? "Bidder: " + newMatch.bidder.name
+                  : 'Select Caller',
+              style: TextStyle(
+                fontSize: 18,
+              )),
         );
       },
       body: Container(
-        child: Wrap(
-            direction: Axis.horizontal,
-            children: players.map<RaisedButton>((Player player) {
-              return RaisedButton(
-                onPressed: () {
-                  expandedState.setState(() {
-                    newMatch.bidder == player
-                        ? newMatch.bidder = null
-                        : newMatch.bidder = player;
-                    isExpanded = false; //we made a selection unexpand section
-                    doLockAndEnableLogic(newMatch, items);
-                  });
-                },
-                child: Text(player.name, style: TextStyle(fontSize: 20)),
-              );
-            }).toList()),
+        child: IntrinsicWidth(
+          child: Wrap(
+              direction: Axis.horizontal,
+              children: players.map<Widget>((Player player) {
+                return Container(
+                    margin: EdgeInsets.only(left: 5.0, right: 5.0),
+                    child: RaisedButton(
+                      onPressed: () {
+                        expandedState.setState(() {
+                          newMatch.bidder == player
+                              ? newMatch.bidder = null
+                              : newMatch.bidder = player;
+                          isExpanded =
+                              false; //we made a selection unexpand section
+                          doLockAndEnableLogic(newMatch, items);
+                        });
+                      },
+                      child: Text(player.name, style: TextStyle(fontSize: 16)),
+                    ));
+              }).toList()),
+        ),
       ),
       isExpanded: isExpanded,
     );
@@ -112,7 +123,10 @@ class BidSliderItem extends NewMatchExpandableItem {
     return ExpansionPanel(
       headerBuilder: (BuildContext context, bool isExpanded) {
         return ListTile(
-          title: Text("Current Bid: " + newMatch.bid.toString()),
+          title: Text("Current Bid: " + newMatch.bid.toString(),
+              style: TextStyle(
+                fontSize: 18,
+              )),
         );
       },
       body: BidSliderWidget(newMatch, expandState),
@@ -149,6 +163,7 @@ class BidSliderState extends State<BidSliderWidget> {
         onChanged: (newrating) {
           setState(() {
             newMatch.bid = newrating;
+            newMatch.made = newrating;
           });
           expandState.setState(() {
             newMatch.bid = newrating;
@@ -160,7 +175,7 @@ class BidSliderState extends State<BidSliderWidget> {
 }
 
 class PartnerSelection extends NewMatchExpandableItem {
-  final List<Player> players;
+  final HashSet<Player> players;
 
   PartnerSelection(Match newMatch, this.players,
       {bool isExpanded = false, bool isLocked = false})
@@ -172,39 +187,56 @@ class PartnerSelection extends NewMatchExpandableItem {
     return ExpansionPanel(
       headerBuilder: (BuildContext context, bool isExpanded) {
         if (newMatch.partners.length == 0) {
-          return Text('No Partners');
+          return ListTile(
+            title: Text("No Partner(s)",
+                style: TextStyle(
+                  fontSize: 18,
+                )),
+          );
         } else {
-          return Wrap(
-              spacing: 2.0,
-              direction: Axis.horizontal,
-              children: newMatch.partners.map<FlatButton>((Player player) {
-                return FlatButton(
-                  onPressed: () {
-                    expandedState.setState(() {
-                      newMatch.partners.remove(player);
-                      doLockAndEnableLogic(newMatch, items);
-                    });
-                  },
-                  child: Text(player.name, style: TextStyle(fontSize: 16)),
-                );
-              }).toList());
+          return IntrinsicWidth(
+            child: Container(
+              margin: EdgeInsets.only(left: 5.0, right: 5.0),
+              child: Wrap(
+                spacing: 2.0,
+                direction: Axis.horizontal,
+                children: newMatch.partners.map<FlatButton>((Player player) {
+                  return FlatButton(
+                    onPressed: () {
+                      expandedState.setState(() {
+                        newMatch.partners.remove(player);
+                        doLockAndEnableLogic(newMatch, items);
+                      });
+                    },
+                    child: Text(player.name, style: TextStyle(fontSize: 16)),
+                  );
+                }).toList(),
+              ),
+            ),
+          );
         }
       },
       body: Container(
-        child: Wrap(
-            spacing: 2.0,
-            direction: Axis.horizontal,
-            children: players.map<RaisedButton>((Player player) {
-              return RaisedButton(
-                onPressed: () {
-                  expandedState.setState(() {
-                    newMatch.partners.add(player);
-                    doLockAndEnableLogic(newMatch, items);
-                  });
-                },
-                child: Text(player.name, style: TextStyle(fontSize: 20)),
-              );
-            }).toList()),
+        child: IntrinsicWidth(
+          child: Wrap(
+              direction: Axis.horizontal,
+              children: players.map<Widget>((Player player) {
+                return Container(
+                    margin: EdgeInsets.only(left: 5.0, right: 5.0),
+                    child: RaisedButton(
+                      onPressed: () {
+                        expandedState.setState(() {
+                          if (newMatch.partners.length <
+                              newMatch.getNumOfPartners()) {
+                            newMatch.partners.add(player);
+                          }
+                          doLockAndEnableLogic(newMatch, items);
+                        });
+                      },
+                      child: Text(player.name, style: TextStyle(fontSize: 16)),
+                    ));
+              }).toList()),
+        ),
       ),
       isExpanded: isExpanded,
     );
@@ -224,10 +256,15 @@ class MadeSliderItem extends NewMatchExpandableItem {
     return ExpansionPanel(
       headerBuilder: (BuildContext context, bool isExpanded) {
         return ListTile(
-          title: Text("Made: " +
-              newMatch.madeValue().toString() +
-              " Lost: " +
-              newMatch.lostValue().toString()),
+          title: Text(
+              "Made: " +
+                  newMatch.madeValue().toString() +
+                  (newMatch.lostValue() > 0 ? " Lost: " : " Gain: ") +
+                  newMatch.lostValue().abs().toString(),
+              style: TextStyle(
+                color: newMatch.lostValue() > 0 ? Colors.red : Colors.green,
+                fontSize: 18,
+              )),
         );
       },
       body: new Builder(builder: (context) {
@@ -274,35 +311,6 @@ class MadeSliderState extends State<MadeSliderWidget> {
           widget.disableButton.value = false;
         },
       ),
-    );
-  }
-}
-
-// For testing
-class BasicItem extends NewMatchExpandableItem {
-  BasicItem(Match newMatch, {bool isExpanded = false})
-      : super(newMatch, isExpanded, true);
-
-  @override
-  ExpansionPanel create(
-      State state, List<NewMatchExpandableItem> items, BuildContext context) {
-    return ExpansionPanel(
-      headerBuilder: (BuildContext context, bool isExpanded) {
-        return ListTile(
-          title: Text('Header'),
-        );
-      },
-      body: ListTile(
-          title: Text('Expanded'),
-          subtitle: Text('To delete this panel, tap the trash can icon'),
-          trailing: Icon(Icons.delete),
-          //remove myself from items
-          onTap: () {
-            state.setState(() {
-              items.removeWhere((currentItem) => this == currentItem);
-            });
-          }),
-      isExpanded: isExpanded,
     );
   }
 }
