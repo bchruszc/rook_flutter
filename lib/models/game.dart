@@ -52,10 +52,10 @@ class GameInfo {
 
 class Match {
   Player bidder;
-  double bid = 100;
+  double bid = 140;
   final int numberOfPlayers;
   List<Player> partners = new List();
-  double made = 100;
+  double made = 140;
   bool submitted = false;
 
   Match(this.numberOfPlayers);
@@ -125,12 +125,12 @@ class Match {
   }
 
 
-  double lostValue() {
-    return bid - made;
+  int lostValue() {
+    return bid.toInt() - made.toInt();//problem here where sometimes the made is a point value ex 144.999999
   }
 
-  double madeValue() {
-    return made;
+  int madeValue() {
+    return made.toInt();
   }
 }
 

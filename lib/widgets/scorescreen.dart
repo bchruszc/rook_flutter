@@ -31,7 +31,6 @@ class ScoreboardState extends State<Scoreboard> {
     _scorePlayers = widget.game.buildScorePlayerList();
     //this call will populate the scores for the player
     populateScoresForPlayer(_scorePlayers);
-    //TODO do STAR logic
     _scorePlayers.sort((o1, o2) {
       //player is null just for the summary. Technically both o1 and o2 can't be null
       if (o1.player == null) {
@@ -62,6 +61,11 @@ class ScoreboardState extends State<Scoreboard> {
       appBar: AppBar(
         title: Text("Score View"),
         actions: [DoneButton(game: widget.game)],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        elevation: 4.0,
+        label: const Text('End Game'),
+        onPressed: () {},
       ),
       body: Column(
         children: <Widget>[
@@ -106,15 +110,19 @@ class ScoreboardState extends State<Scoreboard> {
       grad = LinearGradient(colors: [Colors.white, Colors.redAccent]);
     }
 
+    bool everyOneDealt = index % submittedMatches.length == 0;
+
     Color gradColor = match.madeIt() ? Colors.green : Colors.red;
     Color borderColor = getRoundColor(index);
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 4),
+      margin: EdgeInsets.symmetric(vertical: 3),
       child: Container(
         decoration: BoxDecoration(
           gradient: grad,
           border: Border(
-            bottom: BorderSide(width: 1.0, color: Colors.black),
+            bottom: BorderSide(
+                width: 1.0,
+                color: everyOneDealt ? Colors.purpleAccent : Colors.black),
           ),
         ),
         child: buildMatchItem(index),
@@ -139,11 +147,25 @@ class ScoreboardState extends State<Scoreboard> {
   }
 
   Widget buildMatchItem(int rowIndex) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.max,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: _scorePlayers.map((sp) => buildScore(sp, rowIndex)).toList(),
+    return GestureDetector(
+      onDoubleTap: () {
+        widget.game.matches.remove(rowIndex);
+        //TODO, this doesn't work
+        AlertDialog(
+          title: Text("Are you sure?"),
+          content: Text("100% sure? I can't reverse this"),
+          actions: [
+            RaisedButton(child: Text("Cancel)")),
+            RaisedButton(child: Text("Ok)"))
+          ],
+        );
+      },
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.max,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: _scorePlayers.map((sp) => buildScore(sp, rowIndex)).toList(),
+      ),
     );
   }
 
@@ -159,6 +181,7 @@ class ScoreboardState extends State<Scoreboard> {
     } else {
       return Expanded(
           child: Container(
+        height: 30,
         alignment: Alignment.center,
         child: buildMatchTextBox(sp, match, rowIndex),
       ));
@@ -177,9 +200,14 @@ class ScoreboardState extends State<Scoreboard> {
   }
 
   Text buildMatchTextBox(ScorePlayer sp, Match match, int rowIndex) {
-    return Text(sp.player == null
-        ? buildMatchSummary(match)
-        : sp.score[rowIndex].toInt().toString());
+    return Text(
+        sp.player == null
+            ? buildMatchSummary(match)
+            : sp.score[rowIndex].toInt().toString(),
+        style: TextStyle(
+          color: Colors.black,
+          fontSize: 14,
+        ));
   }
 
   String buildMatchSummary(Match match) {
@@ -217,7 +245,7 @@ class ScoreboardState extends State<Scoreboard> {
     return Text(sp.player.name,
         style: TextStyle(
           color: Colors.black,
-          fontSize: 16,
+          fontSize: 18,
         ));
   }
 }

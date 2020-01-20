@@ -56,7 +56,8 @@ class NewMatchWidgetState extends State<NewMatchWidget> {
       ),
       body: new Builder(
         builder: (context) {
-          return ExpansionStateWidget(widget.game, disableButton);
+          return Column(
+              children: [ExpansionStateWidget(widget.game, disableButton)]);
         },
       ),
     );
@@ -65,8 +66,10 @@ class NewMatchWidgetState extends State<NewMatchWidget> {
 
 class CallerSelection extends NewMatchExpandableItem {
   final HashSet<Player> players;
+  StreamedValue<bool> disableButton;
 
-  CallerSelection(Match newMatch, this.players, {bool isExpanded = true})
+  CallerSelection(Match newMatch, this.disableButton, this.players,
+      {bool isExpanded = true})
       : super(newMatch, isExpanded, false);
 
   @override
@@ -74,15 +77,39 @@ class CallerSelection extends NewMatchExpandableItem {
       BuildContext context) {
     return ExpansionPanel(
       headerBuilder: (BuildContext context, bool isExpanded) {
-        return ListTile(
-          title: Text(
-              newMatch.bidder != null
-                  ? "Bidder: " + newMatch.bidder.name
-                  : 'Select Caller',
+        if (newMatch.bidder == null) {
+          return ListTile(
+            title: Text(
+              "Select Caller",
               style: TextStyle(
                 fontSize: 18,
-              )),
-        );
+              ),
+            ),
+          );
+        } else {
+          return IntrinsicWidth(
+            child: Container(
+              margin: EdgeInsets.only(left: 5.0, right: 5.0),
+              child: Wrap(
+                children: [
+                  SizedBox(width: 60, child: Text("Bidder:")),
+                  Wrap(spacing: 2.0, direction: Axis.horizontal, children: [
+                    FlatButton(
+                      onPressed: () {
+                        expandedState.setState(() {
+                          newMatch.bidder = null;
+                          doLockAndEnableLogic(newMatch, items, disableButton);
+                        });
+                      },
+                      child: Text(newMatch.bidder.name,
+                          style: TextStyle(fontSize: 16)),
+                    )
+                  ])
+                ],
+              ),
+            ),
+          );
+        }
       },
       body: Container(
         child: IntrinsicWidth(
@@ -99,7 +126,7 @@ class CallerSelection extends NewMatchExpandableItem {
                               : newMatch.bidder = player;
                           isExpanded =
                               false; //we made a selection unexpand section
-                          doLockAndEnableLogic(newMatch, items);
+                          doLockAndEnableLogic(newMatch, items, disableButton);
                         });
                       },
                       child: Text(player.name, style: TextStyle(fontSize: 16)),
@@ -123,10 +150,12 @@ class BidSliderItem extends NewMatchExpandableItem {
     return ExpansionPanel(
       headerBuilder: (BuildContext context, bool isExpanded) {
         return ListTile(
-          title: Text("Current Bid: " + newMatch.bid.toString(),
-              style: TextStyle(
-                fontSize: 18,
-              )),
+          title: Text(
+            "Current Bid: " + newMatch.bid.toString(),
+            style: TextStyle(
+              fontSize: 18,
+            ),
+          ),
         );
       },
       body: BidSliderWidget(newMatch, expandState),
@@ -156,9 +185,9 @@ class BidSliderState extends State<BidSliderWidget> {
     return Container(
       child: Slider(
         value: newMatch.bid,
-        min: 100,
+        min: 120,
         max: 180,
-        divisions: 16,
+        divisions: 12,
         label: 'Bid',
         onChanged: (newrating) {
           setState(() {
@@ -176,8 +205,9 @@ class BidSliderState extends State<BidSliderWidget> {
 
 class PartnerSelection extends NewMatchExpandableItem {
   final HashSet<Player> players;
+  StreamedValue<bool> disableButton;
 
-  PartnerSelection(Match newMatch, this.players,
+  PartnerSelection(Match newMatch, this.disableButton, this.players,
       {bool isExpanded = false, bool isLocked = false})
       : super(newMatch, isExpanded, isLocked);
 
@@ -188,29 +218,39 @@ class PartnerSelection extends NewMatchExpandableItem {
       headerBuilder: (BuildContext context, bool isExpanded) {
         if (newMatch.partners.length == 0) {
           return ListTile(
-            title: Text("No Partner(s)",
-                style: TextStyle(
-                  fontSize: 18,
-                )),
+            title: Text(
+              "No Partner(s)",
+              style: TextStyle(
+                fontSize: 18,
+              ),
+            ),
           );
         } else {
           return IntrinsicWidth(
             child: Container(
               margin: EdgeInsets.only(left: 5.0, right: 5.0),
               child: Wrap(
-                spacing: 2.0,
-                direction: Axis.horizontal,
-                children: newMatch.partners.map<FlatButton>((Player player) {
-                  return FlatButton(
-                    onPressed: () {
-                      expandedState.setState(() {
-                        newMatch.partners.remove(player);
-                        doLockAndEnableLogic(newMatch, items);
-                      });
-                    },
-                    child: Text(player.name, style: TextStyle(fontSize: 16)),
-                  );
-                }).toList(),
+                children: [
+                  SizedBox(width: 60, child: Text("Partners:")),
+                  Wrap(
+                    spacing: 2.0,
+                    direction: Axis.horizontal,
+                    children:
+                        newMatch.partners.map<FlatButton>((Player player) {
+                      return FlatButton(
+                        onPressed: () {
+                          expandedState.setState(() {
+                            newMatch.partners.remove(player);
+                            doLockAndEnableLogic(
+                                newMatch, items, disableButton);
+                          });
+                        },
+                        child:
+                            Text(player.name, style: TextStyle(fontSize: 16)),
+                      );
+                    }).toList(),
+                  )
+                ],
               ),
             ),
           );
@@ -230,7 +270,7 @@ class PartnerSelection extends NewMatchExpandableItem {
                               newMatch.getNumOfPartners()) {
                             newMatch.partners.add(player);
                           }
-                          doLockAndEnableLogic(newMatch, items);
+                          doLockAndEnableLogic(newMatch, items, disableButton);
                         });
                       },
                       child: Text(player.name, style: TextStyle(fontSize: 16)),
@@ -244,9 +284,10 @@ class PartnerSelection extends NewMatchExpandableItem {
 }
 
 class MadeSliderItem extends NewMatchExpandableItem {
-  StreamedValue<bool> disableButton;
+  double min = 120;
+  double max = 180;
 
-  MadeSliderItem(Match newMatch, this.disableButton,
+  MadeSliderItem(Match newMatch,
       {bool isExpanded = false, bool isLocked = false})
       : super(newMatch, isExpanded, isLocked);
 
@@ -256,7 +297,9 @@ class MadeSliderItem extends NewMatchExpandableItem {
     return ExpansionPanel(
       headerBuilder: (BuildContext context, bool isExpanded) {
         return ListTile(
-          title: Text(
+            title: Row(
+          children: [
+            Text(
               "Made: " +
                   newMatch.madeValue().toString() +
                   (newMatch.lostValue() > 0 ? " Lost: " : " Gain: ") +
@@ -264,11 +307,23 @@ class MadeSliderItem extends NewMatchExpandableItem {
               style: TextStyle(
                 color: newMatch.lostValue() > 0 ? Colors.red : Colors.green,
                 fontSize: 18,
-              )),
-        );
+              ),
+            ),
+            Spacer(),
+            RaisedButton(
+              child: Text("EAB"),
+              onPressed: () {
+                expandState.setState(() {
+                  min = 0;
+                  max = 180;
+                });
+              },
+            )
+          ],
+        ));
       },
       body: new Builder(builder: (context) {
-        return MadeSliderWidget(newMatch, disableButton, expandState);
+        return MadeSliderWidget(newMatch, expandState, min, max);
       }),
       isExpanded: isExpanded,
     );
@@ -278,9 +333,10 @@ class MadeSliderItem extends NewMatchExpandableItem {
 class MadeSliderWidget extends StatefulWidget {
   final Match newMatch;
   final State expandState;
-  StreamedValue<bool> disableButton;
+  double min;
+  double max;
 
-  MadeSliderWidget(this.newMatch, this.disableButton, this.expandState);
+  MadeSliderWidget(this.newMatch, this.expandState, this.min, this.max);
 
   @override
   MadeSliderState createState() => MadeSliderState(newMatch, expandState);
@@ -296,10 +352,10 @@ class MadeSliderState extends State<MadeSliderWidget> {
   Widget build(BuildContext context) {
     return Container(
       child: Slider(
-        value: newMatch.made,
-        min: 100,
-        max: 180,
-        divisions: 16,
+        value: newMatch.made <= widget.min ? widget.min : newMatch.made,
+        min: widget.min,
+        max: widget.max,
+        divisions: ((widget.max - widget.min) / 5).toInt(),
         label: 'Made',
         onChanged: (newrating) {
           setState(() {
@@ -308,7 +364,6 @@ class MadeSliderState extends State<MadeSliderWidget> {
           expandState.setState(() {
             newMatch.made = newrating;
           });
-          widget.disableButton.value = false;
         },
       ),
     );
@@ -347,12 +402,13 @@ class ExpansionControls extends State<ExpansionStateWidget> {
   void initState() {
     super.initState();
     newItems = [
-      CallerSelection(widget.game.getLatestMatch(), widget.game.players),
+      CallerSelection(widget.game.getLatestMatch(), widget.disableButton,
+          widget.game.players),
       BidSliderItem(widget.game.getLatestMatch(), isLocked: true),
-      PartnerSelection(widget.game.getLatestMatch(), widget.game.players,
+      PartnerSelection(widget.game.getLatestMatch(), widget.disableButton,
+          widget.game.players,
           isLocked: true),
-      MadeSliderItem(widget.game.getLatestMatch(), widget.disableButton,
-          isLocked: true)
+      MadeSliderItem(widget.game.getLatestMatch(), isLocked: true)
     ];
   }
 
@@ -416,7 +472,8 @@ class DoneButtonState extends State<DoneButton> {
   }
 }
 
-doLockAndEnableLogic(Match match, List<NewMatchExpandableItem> items) {
+doLockAndEnableLogic(Match match, List<NewMatchExpandableItem> items,
+    StreamedValue<bool> disableButton) {
   if (match.bidder != null) {
     items[1].isExpanded = true;
     items[1].isLocked = false;
@@ -436,8 +493,10 @@ doLockAndEnableLogic(Match match, List<NewMatchExpandableItem> items) {
     items[2].isLocked = false;
     items[3].isExpanded = true;
     items[3].isLocked = false;
+    disableButton.value = false;
   } else {
     items[3].isExpanded = false;
     items[3].isLocked = true;
+    disableButton.value = true;
   }
 }
