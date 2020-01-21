@@ -84,7 +84,7 @@ class PlayerSelectionState extends State<PlayerSelection> {
         margin: EdgeInsets.symmetric(vertical: 4),
         color: widget.items[index].isSelected ? Colors.red[100] : Colors.white,
         child: ListTile(
-          title: Text(widget.items[index].data.name),
+          title: Text(widget.items[index].data.getFullName()),
         ),
       ),
     );

@@ -242,7 +242,7 @@ class ScoreboardState extends State<Scoreboard> {
   }
 
   Text buildHeaderText(ScorePlayer sp) {
-    return Text(sp.player.name,
+    return Text(sp.player.getHeaderName(),
         style: TextStyle(
           color: Colors.black,
           fontSize: 18,

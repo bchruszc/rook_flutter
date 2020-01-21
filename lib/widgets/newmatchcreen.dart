@@ -101,8 +101,8 @@ class CallerSelection extends NewMatchExpandableItem {
                           doLockAndEnableLogic(newMatch, items, disableButton);
                         });
                       },
-                      child: Text(newMatch.bidder.name,
-                          style: TextStyle(fontSize: 16)),
+                      child: Text(newMatch.bidder.getFullName(),
+                          style: TextStyle(fontSize: 18)),
                     )
                   ])
                 ],
@@ -129,7 +129,8 @@ class CallerSelection extends NewMatchExpandableItem {
                           doLockAndEnableLogic(newMatch, items, disableButton);
                         });
                       },
-                      child: Text(player.name, style: TextStyle(fontSize: 16)),
+                      child: Text(player.getFullName(),
+                          style: TextStyle(fontSize: 16)),
                     ));
               }).toList()),
         ),
@@ -245,8 +246,8 @@ class PartnerSelection extends NewMatchExpandableItem {
                                 newMatch, items, disableButton);
                           });
                         },
-                        child:
-                            Text(player.name, style: TextStyle(fontSize: 16)),
+                        child: Text(player.getFullName(),
+                            style: TextStyle(fontSize: 18)),
                       );
                     }).toList(),
                   )
@@ -273,7 +274,8 @@ class PartnerSelection extends NewMatchExpandableItem {
                           doLockAndEnableLogic(newMatch, items, disableButton);
                         });
                       },
-                      child: Text(player.name, style: TextStyle(fontSize: 16)),
+                      child: Text(player.getFullName(),
+                          style: TextStyle(fontSize: 16)),
                     ));
               }).toList()),
         ),
@@ -310,14 +312,16 @@ class MadeSliderItem extends NewMatchExpandableItem {
               ),
             ),
             Spacer(),
-            RaisedButton(
-              child: Text("EAB"),
-              onPressed: () {
-                expandState.setState(() {
-                  min = 0;
-                  max = 180;
-                });
-              },
+            ButtonTheme(
+              child: RaisedButton(
+                child: Text("EAB", style: TextStyle(fontSize: 12)),
+                onPressed: () {
+                  expandState.setState(() {
+                    min = 0;
+                    max = 180;
+                  });
+                },
+              ),
             )
           ],
         ));

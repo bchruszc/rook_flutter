@@ -3,7 +3,7 @@ import 'dart:collection';
 import 'package:rook_flutter/models/listitem.dart';
 
 class GameInfo {
-  HashSet <Player> players = HashSet ();
+  HashSet<Player> players = HashSet();
   List<Match> matches = List();
 
   addPlayer(Player player) {
@@ -60,13 +60,14 @@ class Match {
 
   Match(this.numberOfPlayers);
 
-  getNumOfPartners(){
-    if(numberOfPlayers == 6){
+  getNumOfPartners() {
+    if (numberOfPlayers == 6) {
       return 2;
-    }else{
+    } else {
       return 1;
     }
   }
+
   bool isMatchSetup() {
     if (bidder != null && bid != null) {
       if (((numberOfPlayers == 4 || numberOfPlayers == 5) &&
@@ -77,7 +78,6 @@ class Match {
     }
     return false;
   }
-
 
   buildScoreLine(List<ScorePlayer> players) {
     double howMuchMade = made - bid;
@@ -120,13 +120,13 @@ class Match {
     }
   }
 
-  bool madeIt(){
-    return lostValue()<=0;
+  bool madeIt() {
+    return lostValue() <= 0;
   }
 
-
   int lostValue() {
-    return bid.toInt() - made.toInt();//problem here where sometimes the made is a point value ex 144.999999
+    return bid.toInt() -
+        made.toInt(); //problem here where sometimes the made is a point value ex 144.999999
   }
 
   int madeValue() {
@@ -160,9 +160,22 @@ class Player {
 
   Player(this.name);
 
+  String getHeaderName() {
+    if (name.length > 5) {
+      return getShortName();
+    } else {
+      return name;
+    }
+  }
+
+  String getFullName(){
+    return name;
+  }
+
   String getShortName() {
     return name.substring(0, 2); //fix me
   }
+
   bool operator ==(o) => o is Player && o.name == name;
 
   int get hashcode => name.hashCode;

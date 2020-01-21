@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:rook_flutter/models/game.dart';
 import 'package:rook_flutter/models/listitem.dart';
 import 'package:rook_flutter/widgets/home.dart';
@@ -13,16 +14,21 @@ List<Player> players = [
   Player('Ray'),
   Player('Jeremy'),
   Player('Iqbal'),
+  Player('Allan'),
 ];
 
 const String HomeRouteId = '/';
 
 void main() {
-  runApp(MaterialApp(
-    title: 'Rook 2.0',
-    onGenerateRoute: generateRoute,
-    initialRoute: HomeRouteId,
-  ));
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
+      .whenComplete(() {
+    runApp(MaterialApp(
+      title: 'Rook 2.0',
+      onGenerateRoute: generateRoute,
+      initialRoute: HomeRouteId,
+    ));
+  });
 }
 
 Route<dynamic> generateRoute(RouteSettings settings) {
