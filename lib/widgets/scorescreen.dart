@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:rook_flutter/database/DbController.dart';
+import 'package:rook_flutter/database/gamemapper.dart';
+import 'package:rook_flutter/database/matchmapper.dart';
+import 'package:rook_flutter/main.dart';
 import 'package:rook_flutter/models/game.dart';
 import 'package:rook_flutter/models/listitem.dart';
 import 'package:rook_flutter/widgets/newmatchcreen.dart';
@@ -65,7 +69,12 @@ class ScoreboardState extends State<Scoreboard> {
       floatingActionButton: FloatingActionButton.extended(
         elevation: 4.0,
         label: const Text('End Game'),
-        onPressed: () {},
+        onPressed: () {
+          DatabaseControl.instance.deleteAll(MatchMapper());
+          DatabaseControl.instance.deleteAll(GameMapper());
+          Navigator.of(context).pushNamedAndRemoveUntil(
+              HomeRouteId, (Route<dynamic> route) => false);
+        },
       ),
       body: Column(
         children: <Widget>[
@@ -110,7 +119,7 @@ class ScoreboardState extends State<Scoreboard> {
       grad = LinearGradient(colors: [Colors.white, Colors.redAccent]);
     }
 
-    bool everyOneDealt = index % submittedMatches.length == 0;
+    bool everyOneDealt = (index + 1) % widget.game.players.length == 0;
 
     Color gradColor = match.madeIt() ? Colors.green : Colors.red;
     Color borderColor = getRoundColor(index);
@@ -121,11 +130,12 @@ class ScoreboardState extends State<Scoreboard> {
           gradient: grad,
           border: Border(
             bottom: BorderSide(
-                width: 1.0,
+                width: everyOneDealt ? 2.0 : 1.0,
                 color: everyOneDealt ? Colors.purpleAccent : Colors.black),
+            top: BorderSide(width: 1.0, color: Colors.black),
           ),
         ),
-        child: buildMatchItem(index),
+        child: buildMatchItem(context, index),
       ),
     );
   }
@@ -146,18 +156,23 @@ class ScoreboardState extends State<Scoreboard> {
         children: scorePlayers.map((sp) => getHeader(sp)).toList());
   }
 
-  Widget buildMatchItem(int rowIndex) {
+  Widget buildMatchItem(BuildContext context, int rowIndex) {
     return GestureDetector(
       onDoubleTap: () {
-        widget.game.matches.remove(rowIndex);
-        //TODO, this doesn't work
-        AlertDialog(
-          title: Text("Are you sure?"),
-          content: Text("100% sure? I can't reverse this"),
-          actions: [
-            RaisedButton(child: Text("Cancel)")),
-            RaisedButton(child: Text("Ok)"))
-          ],
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: Text("Are you sure?"),
+            content: Text("100% sure? I can't reverse this"),
+            actions: [
+              RaisedButton(child: Text("Cancel)")),
+              RaisedButton(
+                child: Text("Ok)"),
+                onPressed: () => widget.game.matches.remove(rowIndex),
+              )
+            ],
+          ),
+          barrierDismissible: false,
         );
       },
       child: Row(

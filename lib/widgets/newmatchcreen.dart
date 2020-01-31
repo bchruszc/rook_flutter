@@ -4,11 +4,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:frideos/frideos.dart';
 import 'package:frideos_core/frideos_core.dart';
+import 'package:rook_flutter/database/DbController.dart';
+import 'package:rook_flutter/database/gamemapper.dart';
+import 'package:rook_flutter/database/matchmapper.dart';
 import 'package:rook_flutter/models/game.dart';
 import 'package:rook_flutter/shared/inheritedprovider.dart';
 import 'package:rook_flutter/widgets/scorescreen.dart';
 
-//typedef WidgetBuilder = Widget Function(BuildContext context,int index);
+bool persistGame = false;
 
 //Entry
 class NewMatchWidget extends StatefulWidget {
@@ -42,6 +45,9 @@ class NewMatchWidgetState extends State<NewMatchWidget> {
     return Scaffold(
       appBar: AppBar(
         title: Text("New Match"),
+        automaticallyImplyLeading: widget.game.matches.length > 0
+            ? false
+            : true, //remove back button after we started match
         actions: <Widget>[
           InheritedProvider<bool>(
             inheritedData: disableButton,
@@ -57,7 +63,12 @@ class NewMatchWidgetState extends State<NewMatchWidget> {
       body: new Builder(
         builder: (context) {
           return Column(
-              children: [ExpansionStateWidget(widget.game, disableButton)]);
+            children: [
+              Expanded(
+                child: ExpansionStateWidget(widget.game, disableButton),
+              )
+            ],
+          );
         },
       ),
     );
@@ -298,8 +309,7 @@ class MadeSliderItem extends NewMatchExpandableItem {
       BuildContext context) {
     return ExpansionPanel(
       headerBuilder: (BuildContext context, bool isExpanded) {
-        return ListTile(
-            title: Row(
+        return Row(
           children: [
             Text(
               "Made: " +
@@ -324,7 +334,7 @@ class MadeSliderItem extends NewMatchExpandableItem {
               ),
             )
           ],
-        ));
+        );
       },
       body: new Builder(builder: (context) {
         return MadeSliderWidget(newMatch, expandState, min, max);
@@ -428,19 +438,17 @@ class ExpansionControls extends State<ExpansionStateWidget> {
   }
 
   Widget buildPanel(BuildContext context) {
-    return SafeArea(
-      child: ExpansionPanelList(
-        expansionCallback: (int index, bool isExpanded) {
-          if (!newItems[index].isLocked) {
-            setState(() {
-              newItems[index].isExpanded = !isExpanded;
-            });
-          }
-        },
-        children: newItems.map<ExpansionPanel>((NewMatchExpandableItem item) {
-          return item.create(this, newItems, context);
-        }).toList(),
-      ),
+    return ExpansionPanelList(
+      expansionCallback: (int index, bool isExpanded) {
+        if (!newItems[index].isLocked) {
+          setState(() {
+            newItems[index].isExpanded = !isExpanded;
+          });
+        }
+      },
+      children: newItems.map<ExpansionPanel>((NewMatchExpandableItem item) {
+        return item.create(this, newItems, context);
+      }).toList(),
     );
   }
 }
@@ -469,10 +477,44 @@ class DoneButtonState extends State<DoneButton> {
       onPressed: () {
         if (widget.game.isLatestMatchSetup() && !disableButton.value) {
           widget.game.getLatestMatch().submitted = true;
-          Navigator.pushNamed(context, Scoreboard.Id, arguments: widget.game);
+          if (persistGame) {
+            saveGameToDB();
+          } else {
+            Navigator.pushNamed(context, Scoreboard.Id, arguments: widget.game);
+          }
         }
       },
     );
+  }
+
+  saveGameToDB() {
+    if (widget.game.databaseId == null) {
+      DatabaseControl.instance.insert(GameMapper(game: widget.game)).then(
+          (gameId) {
+        widget.game.databaseId = gameId;
+        saveMatchToDB(gameId);
+      }, onError: (e) {
+        //TODO do something on error
+      });
+    } else {
+      saveMatchToDB(widget.game.databaseId);
+    }
+  }
+
+  saveMatchToDB(int gameId) {
+    if (widget.game.getLatestMatch().databaseId == null) {
+      DatabaseControl.instance
+          .insert(
+              MatchMapper(match: widget.game.getLatestMatch(), gameId: gameId))
+          .then((matchId) {
+        widget.game.getLatestMatch().databaseId = matchId;
+        Navigator.pushNamed(context, Scoreboard.Id, arguments: widget.game);
+      }, onError: (e) {
+        //TODO do something on error
+      });
+    } else {
+      Navigator.pushNamed(context, Scoreboard.Id, arguments: widget.game);
+    }
   }
 }
 

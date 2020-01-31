@@ -3,6 +3,8 @@ import 'dart:collection';
 import 'package:rook_flutter/models/listitem.dart';
 
 class GameInfo {
+  int databaseId;
+  DateTime dateStarted = new DateTime.now();
   HashSet<Player> players = HashSet();
   List<Match> matches = List();
 
@@ -51,6 +53,7 @@ class GameInfo {
 }
 
 class Match {
+  int databaseId;
   Player bidder;
   double bid = 140;
   final int numberOfPlayers;
@@ -156,27 +159,40 @@ class ScorePlayer {
 }
 
 class Player {
-  String name;
+  String firstName;
+  String lastName;
+  int id;//api id
+  String playerId; //don't think this is used
 
-  Player(this.name);
+  Player(this.firstName, this.lastName, this.id, {this.playerId});
+
+  Player.buildFromAPI(Map<String, dynamic> m) {
+    firstName = m['first_name'];
+    lastName = m['last_name'];
+    id = m['id'] as int;
+  }
 
   String getHeaderName() {
-    if (name.length > 5) {
+    if (getFullName().length > 5) {
       return getShortName();
     } else {
-      return name;
+      return getFullName();
     }
   }
 
-  String getFullName(){
-    return name;
+  String getFullName() {
+    return firstName + " " + lastName;
   }
 
   String getShortName() {
-    return name.substring(0, 2); //fix me
+    return firstName.substring(0, 1) + lastName.substring(0, 1);
   }
 
-  bool operator ==(o) => o is Player && o.name == name;
+  bool operator ==(o) =>
+      o is Player &&
+      o.firstName == firstName &&
+      o.lastName == lastName &&
+      o.id == id;
 
-  int get hashcode => name.hashCode;
+  int get hashcode => firstName.hashCode + lastName.hashCode + id.hashCode;
 }

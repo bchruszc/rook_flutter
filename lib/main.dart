@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:rook_flutter/database/DbController.dart';
 import 'package:rook_flutter/models/game.dart';
-import 'package:rook_flutter/models/listitem.dart';
 import 'package:rook_flutter/widgets/home.dart';
 import 'package:rook_flutter/widgets/newmatchcreen.dart';
 import 'package:rook_flutter/widgets/playerselectionscreen.dart';
 import 'package:rook_flutter/widgets/scorescreen.dart';
 
 List<Player> players = [
-  Player('Martin'),
-  Player('Brad'),
-  Player('Brad H'),
-  Player('Ray'),
-  Player('Jeremy'),
-  Player('Iqbal'),
-  Player('Allan'),
+  Player('Martin', 'V', 1),
+  Player('Brad', 'B', 2),
+  Player('Brad', 'H', 3),
+  Player('Ray', 'V', 4),
+  Player('Jeremy', 'V', 5),
+  Player('Iqbal', 'V', 6),
+  Player('Allan', 'V', 7),
 ];
 
 const String HomeRouteId = '/';
@@ -41,16 +41,12 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return MaterialPageRoute(builder: (context) => HomeRoute(game: game));
     case PlayerSelection.Id:
       return MaterialPageRoute(
-          builder: (context) => PlayerSelection(
-              game: game,
-              items: players.map((player) => ListItem(player)).toList()));
+          builder: (context) => PlayerSelection(game: game));
     case NewMatchWidget.Id:
       return MaterialPageRoute(
           builder: (context) => NewMatchWidget(game: game));
     case Scoreboard.Id:
       return MaterialPageRoute(builder: (context) => Scoreboard(game: game));
-    case '\test':
-      return MaterialPageRoute(builder: (context) => ScoreView());
     default:
       return MaterialPageRoute(builder: (context) => HomeRoute(game: game));
   }

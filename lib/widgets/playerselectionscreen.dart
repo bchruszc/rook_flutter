@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:frideos/frideos.dart';
 import 'package:frideos_core/frideos_core.dart';
+import 'package:rook_flutter/httpapi/httpcontroller.dart';
 import 'package:rook_flutter/models/game.dart';
 import 'package:rook_flutter/models/listitem.dart';
 import 'package:rook_flutter/shared/inheritedprovider.dart';
@@ -9,11 +10,9 @@ import 'package:rook_flutter/widgets/newmatchcreen.dart';
 //Player selection entry
 class PlayerSelection extends StatefulWidget {
   static const String Id = '/PlayerSelect';
-  final List<ListItem<Player>> items;
   final GameInfo game;
 
-  PlayerSelection({Key key, @required this.game, @required this.items})
-      : super(key: key);
+  PlayerSelection({Key key, @required this.game}) : super(key: key);
 
   @override
   PlayerSelectionState createState() => PlayerSelectionState();
@@ -21,11 +20,15 @@ class PlayerSelection extends StatefulWidget {
 
 class PlayerSelectionState extends State<PlayerSelection> {
   final StreamedValue<bool> disableButton = StreamedValue();
+  Future<GetListResponse> playerGet;
+
+  List<ListItem<Player>> cachedItemList;
 
   @override
   void initState() {
     super.initState();
     disableButton.value = true;
+    playerGet = APIRequest().getAPI(PlayerList);
   }
 
   @override
@@ -51,9 +54,28 @@ class PlayerSelectionState extends State<PlayerSelection> {
           )
         ],
       ),
-      body: ListView.builder(
-        itemCount: widget.items.length,
-        itemBuilder: buildItemTile,
+      body: FutureBuilder<GetListResponse>(
+        future: playerGet,
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            if (cachedItemList == null) {
+              List<Player> players = snapshot.data.jsons
+                  .map((m) => Player.buildFromAPI(m))
+                  .toList();
+              cachedItemList =
+                  players.map((player) => ListItem(player)).toList();
+            }
+            return ListView.builder(
+              itemCount: cachedItemList.length,
+              itemBuilder: buildItemTile,
+            );
+          } else if (snapshot.hasError) {
+            return Text("${snapshot.error}");
+          }
+
+          // By default, show a loading spinner.
+          return CircularProgressIndicator();
+        },
       ),
     );
   }
@@ -61,30 +83,33 @@ class PlayerSelectionState extends State<PlayerSelection> {
   Widget buildItemTile(BuildContext context, int index) {
     return GestureDetector(
       onTap: () {
-        if (widget.items.any((item) => item.isSelected)) {
+        //if anything is selected
+        if (cachedItemList.any((item) => item.isSelected)) {
           setState(() {
-            widget.items[index].isSelected = !widget.items[index].isSelected;
+            cachedItemList[index].isSelected =
+                !cachedItemList[index].isSelected;
           });
-          if (widget.items[index].isSelected) {
-            widget.game.addPlayer(widget.items[index].data);
+          if (cachedItemList[index].isSelected) {
+            widget.game.addPlayer(cachedItemList[index].data);
           } else {
-            widget.game.removePlayer(widget.items[index].data);
+            widget.game.removePlayer(cachedItemList[index].data);
           }
           updateButtonState(disableButton);
         }
       },
       onLongPress: () {
         setState(() {
-          widget.items[index].isSelected = true;
+          cachedItemList[index].isSelected = true;
         });
-        widget.game.addPlayer(widget.items[index].data);
+        widget.game.addPlayer(cachedItemList[index].data);
         updateButtonState(disableButton);
       },
       child: Container(
         margin: EdgeInsets.symmetric(vertical: 4),
-        color: widget.items[index].isSelected ? Colors.red[100] : Colors.white,
+        color:
+            cachedItemList[index].isSelected ? Colors.red[100] : Colors.white,
         child: ListTile(
-          title: Text(widget.items[index].data.getFullName()),
+          title: Text(cachedItemList[index].data.getFullName()),
         ),
       ),
     );
