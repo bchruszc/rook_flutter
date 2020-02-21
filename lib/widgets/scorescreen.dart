@@ -1,7 +1,5 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:rook_flutter/database/DbController.dart';
-import 'package:rook_flutter/database/gamemapper.dart';
-import 'package:rook_flutter/database/matchmapper.dart';
 import 'package:rook_flutter/main.dart';
 import 'package:rook_flutter/models/game.dart';
 import 'package:rook_flutter/models/listitem.dart';
@@ -70,8 +68,8 @@ class ScoreboardState extends State<Scoreboard> {
         elevation: 4.0,
         label: const Text('End Game'),
         onPressed: () {
-          DatabaseControl.instance.deleteAll(MatchMapper());
-          DatabaseControl.instance.deleteAll(GameMapper());
+          //        DatabaseControl.instance.deleteAll(MatchMapper());
+          //       DatabaseControl.instance.deleteAll(GameMapper());
           Navigator.of(context).pushNamedAndRemoveUntil(
               HomeRouteId, (Route<dynamic> route) => false);
         },
@@ -81,10 +79,12 @@ class ScoreboardState extends State<Scoreboard> {
           //buildHeader(_scorePlayers),
           buildHeader(_scorePlayers),
           Expanded(
-              child: ListView.builder(
-            itemCount: submittedMatches.length,
-            itemBuilder: buildItemTile,
-          ))
+            child: ListView.builder(
+              itemCount: submittedMatches.length,
+              itemBuilder: (context, index) =>
+                  buildItemTile(context, index, this),
+            ),
+          )
         ],
       ),
     );
@@ -112,7 +112,8 @@ class ScoreboardState extends State<Scoreboard> {
     );
   }
 
-  Widget buildItemTile(BuildContext context, int index) {
+  Widget buildItemTile(
+      BuildContext context, int index, State<Scoreboard> state) {
     Match match = submittedMatches[index];
     LinearGradient grad = LinearGradient(colors: [Colors.white, Colors.green]);
     if (!match.madeIt()) {
@@ -131,11 +132,11 @@ class ScoreboardState extends State<Scoreboard> {
           border: Border(
             bottom: BorderSide(
                 width: everyOneDealt ? 2.0 : 1.0,
-                color: everyOneDealt ? Colors.purpleAccent : Colors.black),
+                color: everyOneDealt ? Colors.blue : Colors.black),
             top: BorderSide(width: 1.0, color: Colors.black),
           ),
         ),
-        child: buildMatchItem(context, index),
+        child: buildMatchItem(context, index, state),
       ),
     );
   }
@@ -156,19 +157,29 @@ class ScoreboardState extends State<Scoreboard> {
         children: scorePlayers.map((sp) => getHeader(sp)).toList());
   }
 
-  Widget buildMatchItem(BuildContext context, int rowIndex) {
+  Widget buildMatchItem(
+      BuildContext context, int rowIndex, State<Scoreboard> state) {
     return GestureDetector(
+      behavior: HitTestBehavior.translucent,
       onDoubleTap: () {
         showDialog(
           context: context,
           builder: (_) => AlertDialog(
-            title: Text("Are you sure?"),
+            title: Text("Delete Row"),
             content: Text("100% sure? I can't reverse this"),
             actions: [
-              RaisedButton(child: Text("Cancel)")),
               RaisedButton(
-                child: Text("Ok)"),
-                onPressed: () => widget.game.matches.remove(rowIndex),
+                child: Text("Cancel"),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              RaisedButton(
+                child: Text("Ok"),
+                onPressed: () {
+                  state.setState(() {
+                    widget.game.matches.removeAt(rowIndex);
+                  });
+                  Navigator.of(context).pop();
+                },
               )
             ],
           ),
@@ -221,7 +232,7 @@ class ScoreboardState extends State<Scoreboard> {
             : sp.score[rowIndex].toInt().toString(),
         style: TextStyle(
           color: Colors.black,
-          fontSize: 14,
+          fontSize: 20,
         ));
   }
 
@@ -260,7 +271,7 @@ class ScoreboardState extends State<Scoreboard> {
     return Text(sp.player.getHeaderName(),
         style: TextStyle(
           color: Colors.black,
-          fontSize: 18,
+          fontSize: 24,
         ));
   }
 }

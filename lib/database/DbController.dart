@@ -100,9 +100,83 @@ class DatabaseControl {
     return maps.map((m) => mapper.createInstance().fromMap(m)).toList();
   }
 
+  Future<List<MatchMapper>> loadMatches(int gameId) async {
+    Database db = await database;
+
+    MatchMapper mapper = MatchMapper();
+    List<Map> maps = await db.query(mapper.getTable(),where: '$MatchColumnGameId = ?', whereArgs: [gameId]);
+    if (maps == null || maps.isEmpty) {
+      return List();
+    }
+    return maps.map((m) => mapper.createInstance().fromMap(m)).toList();
+  }
+
+  Future<List<GameAndMatchMappers>> loadAllGames() async {
+    Database db = await database;
+    List<Map> gameMaps = await db.query(GameMapper().getTable());
+    if (gameMaps == null || gameMaps.isEmpty) {
+      return List();
+    }
+
+    List<GameAndMatchMappers> mappers = List();
+
+    List<GameMapper> listOfGames = gameMaps.map((m) => GameMapper().createInstance().fromMap(m)).toList();
+
+    await listOfGames.forEach((game)async{
+      GameAndMatchMappers mapper = GameAndMatchMappers(game);
+      List<MatchMapper> matches = await loadMatches(game.id);
+      mapper.matchMappers=matches;
+      mappers.add(mapper);
+     });
+
+    return mappers;
+  }
+
+
   Future<int> deleteAll<T extends DTOMapper>(T mapper) async {
     Database db = await database;
+
     int id = await db.delete(mapper.getTable());
     return id;
   }
+
+}
+
+class GameAndMatchMappers{
+  GameMapper gameMapper;
+  List<MatchMapper> matchMappers;
+
+  GameAndMatchMappers(this.gameMapper);
+
+//  setMatchMappers(int gameId) async{
+//    matchMappers = await DatabaseControl.instance.loadMatches(gameId);
+//    print(matchMappers.length);
+//
+//  }
+
+  int getNumberOfPlayers(){
+    int i = 0;
+    if(gameMapper.player1 != null){
+      i++;
+    }
+    if(gameMapper.player2 != null){
+      i++;
+    }
+    if(gameMapper.player3 != null){
+      i++;
+    }
+    if(gameMapper.player4 != null){
+      i++;
+    }
+    if(gameMapper.player5 != null){
+      i++;
+    }
+    if(gameMapper.player6 != null){
+      i++;
+    }
+    return i;
+  }
+
+
+
 }

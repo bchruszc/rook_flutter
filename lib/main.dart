@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:rook_flutter/database/DbController.dart';
 import 'package:rook_flutter/models/game.dart';
 import 'package:rook_flutter/widgets/home.dart';
 import 'package:rook_flutter/widgets/newmatchcreen.dart';
 import 'package:rook_flutter/widgets/playerselectionscreen.dart';
 import 'package:rook_flutter/widgets/scorescreen.dart';
+import 'package:screen/screen.dart';
 
 List<Player> players = [
   Player('Martin', 'V', 1),
@@ -21,13 +21,14 @@ const String HomeRouteId = '/';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  Screen.keepOn(true);
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
       .whenComplete(() {
     runApp(MaterialApp(
-      title: 'Rook 2.0',
-      onGenerateRoute: generateRoute,
-      initialRoute: HomeRouteId,
-    ));
+        title: 'Rook 2.0',
+        onGenerateRoute: generateRoute,
+        initialRoute: HomeRouteId,
+        darkTheme: ThemeData.dark()));
   });
 }
 

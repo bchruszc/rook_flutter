@@ -11,7 +11,7 @@ import 'package:rook_flutter/models/game.dart';
 import 'package:rook_flutter/shared/inheritedprovider.dart';
 import 'package:rook_flutter/widgets/scorescreen.dart';
 
-bool persistGame = false;
+bool persistGame = true;
 
 //Entry
 class NewMatchWidget extends StatefulWidget {
@@ -161,13 +161,15 @@ class BidSliderItem extends NewMatchExpandableItem {
       BuildContext context) {
     return ExpansionPanel(
       headerBuilder: (BuildContext context, bool isExpanded) {
-        return ListTile(
-          title: Text(
-            "Current Bid: " + newMatch.bid.toString(),
-            style: TextStyle(
-              fontSize: 18,
-            ),
-          ),
+        return Wrap(
+          children: [
+            Text(
+              "Current Bid: " + newMatch.bid.toInt().toString(),
+              style: TextStyle(
+                fontSize: 18,
+              ),
+            )
+          ],
         );
       },
       body: BidSliderWidget(newMatch, expandState),
@@ -204,7 +206,6 @@ class BidSliderState extends State<BidSliderWidget> {
         onChanged: (newrating) {
           setState(() {
             newMatch.bid = newrating;
-            newMatch.made = newrating;
           });
           expandState.setState(() {
             newMatch.bid = newrating;
@@ -311,16 +312,26 @@ class MadeSliderItem extends NewMatchExpandableItem {
       headerBuilder: (BuildContext context, bool isExpanded) {
         return Row(
           children: [
-            Text(
-              "Made: " +
-                  newMatch.madeValue().toString() +
-                  (newMatch.lostValue() > 0 ? " Lost: " : " Gain: ") +
-                  newMatch.lostValue().abs().toString(),
-              style: TextStyle(
-                color: newMatch.lostValue() > 0 ? Colors.red : Colors.green,
-                fontSize: 18,
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(
+                "Made: " +
+                    newMatch.madeValue().toString() +
+                    (newMatch.down() > 0 ? "  Down: " : " Gain: ") +
+                    newMatch.down().abs().toString(),
+                style: TextStyle(
+                  color: newMatch.down() > 0 ? Colors.red : Colors.green,
+                  fontSize: 18,
+                ),
               ),
-            ),
+              SizedBox(height: 10),
+              Text(
+                "Lost: " + newMatch.lostValue().toString(),
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 18,
+                ),
+              )
+            ]),
             Spacer(),
             ButtonTheme(
               child: RaisedButton(
@@ -366,7 +377,7 @@ class MadeSliderState extends State<MadeSliderWidget> {
   Widget build(BuildContext context) {
     return Container(
       child: Slider(
-        value: newMatch.made <= widget.min ? widget.min : newMatch.made,
+        value: newMatch.made,
         min: widget.min,
         max: widget.max,
         divisions: ((widget.max - widget.min) / 5).toInt(),
@@ -494,6 +505,7 @@ class DoneButtonState extends State<DoneButton> {
         widget.game.databaseId = gameId;
         saveMatchToDB(gameId);
       }, onError: (e) {
+        print(e.toString());
         //TODO do something on error
       });
     } else {
@@ -502,6 +514,7 @@ class DoneButtonState extends State<DoneButton> {
   }
 
   saveMatchToDB(int gameId) {
+
     if (widget.game.getLatestMatch().databaseId == null) {
       DatabaseControl.instance
           .insert(
@@ -510,6 +523,7 @@ class DoneButtonState extends State<DoneButton> {
         widget.game.getLatestMatch().databaseId = matchId;
         Navigator.pushNamed(context, Scoreboard.Id, arguments: widget.game);
       }, onError: (e) {
+        print(e.toString());
         //TODO do something on error
       });
     } else {

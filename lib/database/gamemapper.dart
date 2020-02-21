@@ -56,7 +56,7 @@ class GameMapper extends DTOMapper {
   }
 
   @override
-  DTOMapper fromMap(Map<String, dynamic> map) {
+  GameMapper fromMap(Map<String, dynamic> map) {
     id = map[GameColumnId];
 //    createdDate = map[GameColumnCreatedDate];
     player1 = map[GameColumnPlayerOne];
@@ -75,7 +75,7 @@ class GameMapper extends DTOMapper {
   }
 
   @override
-  DTOMapper createInstance() {
+  GameMapper createInstance() {
     return GameMapper();
   }
 }

@@ -48,7 +48,7 @@ class MatchMapper extends DTOMapper {
   }
 
   @override
-  DTOMapper fromMap(Map<String, dynamic> map) {
+  MatchMapper fromMap(Map<String, dynamic> map) {
     id = map[MatchColumnId];
     gameId = map[MatchColumnGameId];
     bidder = map[MatchColumnBidder];
@@ -66,7 +66,7 @@ class MatchMapper extends DTOMapper {
   }
 
   @override
-  DTOMapper createInstance() {
+  MatchMapper createInstance() {
     return MatchMapper();
   }
 }

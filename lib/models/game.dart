@@ -58,7 +58,7 @@ class Match {
   double bid = 140;
   final int numberOfPlayers;
   List<Player> partners = new List();
-  double made = 140;
+  double made = 180;
   bool submitted = false;
 
   Match(this.numberOfPlayers);
@@ -124,13 +124,19 @@ class Match {
   }
 
   bool madeIt() {
-    return lostValue() <= 0;
+    return down() <= 0;
   }
 
   int lostValue() {
+    return 180 -
+        made.toInt(); //problem here where sometimes the made is a point value ex 144.999999
+  }
+
+  int down(){
     return bid.toInt() -
         made.toInt(); //problem here where sometimes the made is a point value ex 144.999999
   }
+
 
   int madeValue() {
     return made.toInt();
